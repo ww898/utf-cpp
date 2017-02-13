@@ -28,6 +28,58 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
+#include <boost/format.hpp>
+
+#include <iostream>
+#include <codecvt>
+#include <cstdlib>
+
+#if defined(_WIN32)
+#define NOGDICAPMASKS
+#define NOVIRTUALKEYCODES
+#define NOWINMESSAGES
+#define NOWINSTYLES
+#define NOSYSMETRICS
+#define NOMENUS
+#define NOICONS
+#define NOKEYSTATES
+#define NOSYSCOMMANDS
+#define NORASTEROPS
+#define NOSHOWWINDOW
+#define OEMRESOURCE
+#define NOATOM
+#define NOCLIPBOARD
+#define NOCOLOR
+#define NOCTLMGR
+#define NODRAWTEXT
+#define NOGDI
+#define NOKERNEL
+#define NOUSER
+#define NONLS
+#define NOMB
+#define NOMEMMGR
+#define NOMETAFILE
+#define NOMINMAX
+#define NOMSG
+#define NOOPENFILE
+#define NOSCROLL
+#define NOSERVICE
+#define NOSOUND
+#define NOTEXTMETRIC
+#define NOWH
+#define NOWINOFFSETS
+#define NOCOMM
+#define NOKANJI
+#define NOHELP
+#define NOPROFILER
+#define NODEFERWINDOWPOS
+#define NOMCX
+#include <windows.h>
+#endif
+
+#if defined(__linux__)
+#include <chrono>
+#endif
 
 namespace ww898 {
 namespace test {
@@ -41,7 +93,7 @@ struct utf_tuple final
 	std::u32string utf32;
 };
 
-struct utf_tuple_synthetic final
+struct utf_tuple_out_of_utf16 final
 {
 	std::string utf8;
 	std::u32string utf32;
@@ -295,7 +347,7 @@ utf_tuple const _Ourpairs[] =
 	},
 };
 
-utf_tuple_synthetic const _Ourpairs_synthetic[] =
+utf_tuple_out_of_utf16 const _Ourpairs_out_of_utf16[] =
 {
 	{
 		"\xFA\x95\xA9\xB6\x83",
@@ -404,7 +456,7 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(detail::_Ou
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_synthetic, boost::make_iterator_range(detail::_Ourpairs_synthetic), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
 {
 	std::string _Res;
 	auto const _It = _Tuple.utf32.c_str();
@@ -419,7 +471,7 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_synthetic, boost::make_iterator_range(de
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_synthetic, boost::make_iterator_range(detail::_Ourpairs_synthetic), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
 {
 	std::u32string _Res;
 	auto const _It = _Tuple.utf8.c_str();
@@ -487,7 +539,7 @@ BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(detail::_Ourpairs), 
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf8_synthetic, boost::make_iterator_range(detail::_Ourpairs_synthetic), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf8_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf8::max_supported_symbol_size;
 	std::string _Res;
@@ -504,7 +556,7 @@ BOOST_DATA_TEST_CASE(size_utf8_synthetic, boost::make_iterator_range(detail::_Ou
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf32_synthetic, boost::make_iterator_range(detail::_Ourpairs_synthetic), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf32_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf32::max_supported_symbol_size;
 	std::u32string _Res;
@@ -521,7 +573,245 @@ BOOST_DATA_TEST_CASE(size_utf32_synthetic, boost::make_iterator_range(detail::_O
 	BOOST_TEST_REQUIRE(_Success);
 }
 
+namespace detail {
+
+inline uint64_t get_time() throw()
+{
+#if defined(_WIN32)
+
+#if !defined(_M_IX86) && !defined(_M_X64)
+	#error Unknown platform
+#endif
+
+	// Note: CPUID can be executed at any privilege level to serialize instruction execution. Serializing instruction
+	//       execution guarantees that any modifications to flags, registers, and memory for previous instructions are
+	//       completed before the next instruction is fetched and executed.
+	int _Cpu_info[4];
+	__cpuid(_Cpu_info, 0);
+	return __rdtsc();
+
+#elif defined(__GNUC__) || defined(__clang__)
+
+#ifdef __i386__
+	#define DIRTY "%ebx", "%ecx"
+#elif __x86_64__
+	#define DIRTY "%rbx", "%rcx"
+#else
+	#error Unknown platform
+#endif
+
+	uint32_t _Lo, _Hi;
+	asm volatile(
+		"cpuid\n\t"
+		"rdtsc\n\t"
+		: "=a"(_Lo), "=d"(_Hi)
+		: "a"(0)
+		: DIRTY);
+	return static_cast<uint64_t>(_Hi) << 32 | _Lo;
+
+#undef DIRTY
+
+#else
+#error get_time() is not implmeneted for this architecture
+#endif
+}
+
+inline uint64_t get_time_resolution() throw()
+{
+#if defined(_WIN32)
+	LARGE_INTEGER _Beg_orig, _End_orig, _Freq_orig;
+	if (!QueryPerformanceCounter(&_Beg_orig))
+		std::abort();
+	auto const _Start_time = get_time();
+	Sleep(1000);
+	if (!QueryPerformanceCounter(&_End_orig))
+		std::abort();
+	auto const _End_time = get_time();
+	if (!QueryPerformanceFrequency(&_Freq_orig))
+		std::abort();
+	auto const _Elapsed_orig = _End_orig.QuadPart - _Beg_orig.QuadPart;
+	auto const _Elapsed_time = _End_time - _Start_time;
+	return (_Freq_orig.QuadPart * _Elapsed_time + _Elapsed_orig / 2) / _Elapsed_orig;
+#elif defined(__linux__)
+	timespec _Beg_orig, _End_orig;
+	if (clock_gettime(CLOCK_REALTIME, &_Beg_orig))
+		std::abort();
+	auto const _Start_time = get_time();
+	sleep(1);
+	if (clock_gettime(CLOCK_REALTIME, &_End_orig))
+		std::abort();
+	auto const _End_time = get_time();
+	std::chrono::nanoseconds const _Elapsed_orig =
+		(std::chrono::seconds(_End_orig.tv_sec) + std::chrono::nanoseconds(_End_orig.tv_nsec)) -
+		(std::chrono::seconds(_Beg_orig.tv_sec) + std::chrono::nanoseconds(_Beg_orig.tv_nsec));
+	auto const _Elapsed_time = _End_time - _Start_time;
+	return static_cast<uint64_t>(_Elapsed_time * 1000000000ull / _Elapsed_orig.count());
+#else
+#error get_time() is not implmeneted for this architecture
+#endif
+}
+
+}
+
+BOOST_AUTO_TEST_CASE(compare_performance)
+{
+	static size_t const utf32_max_size = 16 * 1024 * 1024;
+	static size_t const utf16_max_size = utf32_max_size * utf::utf16::max_unicode_symbol_size;
+	static size_t const utf8_max_size = utf32_max_size * utf::utf8::max_unicode_symbol_size;
+	static size_t const iterations = 16;
+
+	std::vector<char> _Utf8;
+	std::vector<wchar_t> _Utf16;
+	std::vector<char32_t> _Utf32;
+
+	_Utf8.reserve(utf8_max_size);
+	_Utf16.reserve(utf16_max_size);
+	_Utf16.reserve(utf32_max_size);
+
+	boost::random::mt19937 _Random(0);
+	for (auto _N = utf32_max_size; _N-- > 0; )
+	{
+		auto _Cp = _Random() % (utf::max_unicode_code_point + 1);
+		if (utf::is_surrogate(_Cp))
+			_Cp -= utf::min_surrogate;
+		_Utf32.push_back(_Cp);
+	}
+
+	auto const _Resolution = detail::get_time_resolution();
+	std::cout << (boost::format("Resolution: %u") % _Resolution).str() << std::endl;
+
+	double _Utf8_utf16_duration;
+	double _Utf16_utf8_duration;
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf8.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf32, utf::utf8>(&*_Utf32.begin(), &*_Utf32.end(), std::back_inserter(_Utf8));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF32 ==> UTF8 : %fs") % _Duration).str() << std::endl;
+	}
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf16.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf32, utf::utf16>(&*_Utf32.begin(), &*_Utf32.end(), std::back_inserter(_Utf16));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF32 ==> UTF16: %fs") % _Duration).str() << std::endl;
+	}
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf8.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf16, utf::utf8>(&*_Utf16.begin(), &*_Utf16.end(), std::back_inserter(_Utf8));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		_Utf16_utf8_duration = _Duration;
+		std::cout << (boost::format("UTF16 ==> UTF8 : %fs") % _Duration).str() << std::endl;
+	}
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf32.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf16, utf::utf32>(&*_Utf16.begin(), &*_Utf16.end(), std::back_inserter(_Utf32));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF16 ==> UTF32: %fs") % _Duration).str() << std::endl;
+	}
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf16.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf8, utf::utf16>(&*_Utf8.begin(), &*_Utf8.end(), std::back_inserter(_Utf16));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		_Utf8_utf16_duration = _Duration;
+		std::cout << (boost::format("UTF8  ==> UTF16: %fs") % _Duration).str() << std::endl;
+	}
+
+	{
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Utf32.clear();
+			auto const _Start_time = detail::get_time();
+			utf::conv<utf::utf8, utf::utf32>(&*_Utf8.begin(), &*_Utf8.end(), std::back_inserter(_Utf32));
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF8  ==> UTF32: %fs") % _Duration).str() << std::endl;
+	}
+
+	std::cout << "codecvt_utf8_utf16<wchar_t>:" << std::endl;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> _Conv;
+
+	{
+		std::string _Res;
+		_Res.reserve(utf8_max_size);
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Res.clear();
+			auto const _Start_time = detail::get_time();
+			_Res = _Conv.to_bytes(&*_Utf16.begin(), &*_Utf16.end());
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		BOOST_TEST_REQUIRE(_Res.size() == _Utf8.size());
+		auto const _Same = memcmp(&*_Utf8.begin(), &*_Res.begin(), _Utf8.size()) == 0;
+		BOOST_TEST_REQUIRE(_Same);
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF16 ==> UTF8 : %fs (%+.2f%%)") % _Duration % (100 * (_Duration / _Utf16_utf8_duration - 1))).str() << std::endl;
+	}
+
+	{
+		std::wstring _Res;
+		_Res.reserve(utf16_max_size);
+		uint64_t _Sum_duration = 0;
+		for (auto _N = iterations; _N-- > 0;)
+		{
+			_Res.clear();
+			auto const _Start_time = detail::get_time();
+			_Res = _Conv.from_bytes(&*_Utf8.begin(), &*_Utf8.end());
+			auto const _End_time = detail::get_time();
+			_Sum_duration += _End_time - _Start_time;
+		}
+		BOOST_TEST_REQUIRE(_Res.size() == _Utf16.size());
+		auto const _Same = memcmp(&*_Utf16.begin(), &*_Res.begin(), sizeof(wchar_t) * _Utf16.size()) == 0;
+		BOOST_TEST_REQUIRE(_Same);
+		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
+		std::cout << (boost::format("UTF8  ==> UTF16: %fs (%+.2f%%)") % _Duration % (100 * (_Duration / _Utf8_utf16_duration - 1))).str() << std::endl;
+	}
+}
+
 }}
 
 BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::detail::utf_tuple)
-BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::detail::utf_tuple_synthetic)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::detail::utf_tuple_out_of_utf16)

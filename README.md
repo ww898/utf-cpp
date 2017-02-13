@@ -11,8 +11,8 @@ The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be from th
 Tested on following compilers:
 - Visual Studio 2013 Update 5
 - Visual Studio 2015 Update 3
-- GCC 4.8.4
-- Clang 3.4
+- GCC 5.4.0
+- Clang 3.8.0
 
 ##Usage example
 ```cpp
@@ -25,6 +25,62 @@ std::u32string _Utf32;
 utf::conv<utf::utf16, utf::utf32>(_Utf16.begin(), _Utf16.end(), std::back_inserter(_Utf32));
 std::vector<char> _Utf8;
 utf::convz<utf::utf32, utf::utf8>(_Utf32.begin(), std::back_inserter(_Utf8));
+```
+
+##Performance
+####Windows x86 (Visual Studio 2013 Update 5):
+```cpp
+Running 225 test cases...
+Resolution: 2592001699
+UTF32 ==> UTF8 : 0.335336s
+UTF32 ==> UTF16: 0.091804s
+UTF16 ==> UTF8 : 0.433169s
+UTF16 ==> UTF32: 0.097712s
+UTF8  ==> UTF16: 0.217497s
+UTF8  ==> UTF32: 0.140362s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.594638s (+37.28%)
+UTF8  ==> UTF16: 0.378968s (+74.24%)
+
+*** No errors detected
+```
+
+####Windows x64 (Visual Studio 2013 Update 5):
+```cpp
+Running 225 test cases...
+Resolution: 2592004604
+UTF32 ==> UTF8 : 0.190584s
+UTF32 ==> UTF16: 0.108506s
+UTF16 ==> UTF8 : 0.207430s
+UTF16 ==> UTF32: 0.089672s
+UTF8  ==> UTF16: 0.210476s
+UTF8  ==> UTF32: 0.168318s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.463934s (+123.66%)
+UTF8  ==> UTF16: 0.318946s (+51.54%)
+
+*** No errors detected
+```
+
+####Ubuntu 16.04 LTS x64 (GCC 5.4.0):
+```cpp
+```
+
+####Ubuntu 16.04 LTS x64 (Clang 3.8.0):
+```cpp
+Running 225 test cases...
+Resolution: 2592004346
+UTF32 ==> UTF8 : 0.169015s
+UTF32 ==> UTF16: 0.097330s
+UTF16 ==> UTF8 : 0.197774s
+UTF16 ==> UTF32: 0.085933s
+UTF8  ==> UTF16: 0.172294s
+UTF8  ==> UTF32: 0.130314s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.316627s (+60.10%)
+UTF8  ==> UTF16: 0.592549s (+243.92%)
+
+*** No errors detected
 ```
 
 ##Conversion table
