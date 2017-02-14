@@ -7,6 +7,14 @@ The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be from th
 - 4 bytes for unicode code points
 - 6 bytes for 31bit code points
 
+######UTF-16 surrogate decoder:
+|High\Low|DC00|DC01|…|DFFF|
+|:-:|:-:|:-:|:-:|:-:|
+|**D800**|010000|010001|…|0103FF|
+|**D801**|010400|010401|…|0107FF|
+|**⋮**|⋮|⋮|⋱|⋮|
+|**DBFF**|10FC00|10FC01|…|10FFFF|
+
 ##Supported compilers
 Tested on following compilers:
 - Visual Studio 2013 Update 5
