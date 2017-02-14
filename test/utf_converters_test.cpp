@@ -674,6 +674,13 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		auto _Cp = _Random() % (utf::max_unicode_code_point + 1);
 		if (utf::is_surrogate(_Cp))
 			_Cp -= utf::min_surrogate;
+
+#if defined(__GNUC__)
+		// Bug: std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS failed to convert \xFFFF code point correctly.
+		if (_Cp == 0xFFFF)
+			_Cp = 0xFEFF;
+#endif
+
 		_Utf32.push_back(_Cp);
 	}
 
@@ -770,7 +777,13 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 	}
 
 	std::cout << "codecvt_utf8_utf16<wchar_t>:" << std::endl;
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> _Conv;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t
+#if defined(__GNUC__)
+		// Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
+		, 0x10ffffUL
+		, std::little_endian
+#endif
+		>> _Conv;
 
 	{
 		std::string _Res;

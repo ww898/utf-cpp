@@ -64,6 +64,19 @@ UTF8  ==> UTF16: 0.318946s (+51.54%)
 
 ####Ubuntu 16.04 LTS x64 (GCC 5.4.0):
 ```cpp
+Running 225 test cases...
+Resolution: 2592003903
+UTF32 ==> UTF8 : 0.215397s
+UTF32 ==> UTF16: 0.102215s
+UTF16 ==> UTF8 : 0.214120s
+UTF16 ==> UTF32: 0.052067s
+UTF8  ==> UTF16: 0.187837s
+UTF8  ==> UTF32: 0.143444s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.278069s (+29.87%)
+UTF8  ==> UTF16: 1.030013s (+448.36%)
+
+*** No errors detected
 ```
 
 ####Ubuntu 16.04 LTS x64 (Clang 3.8.0):
