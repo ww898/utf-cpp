@@ -344,9 +344,12 @@ struct conv_strategy<_Utf_t, _Outf_t, _It_t, _Oit_t, true> final
 {
 	static void func(_It_t _It, _It_t const _Eit, _Oit_t _Oit)
 	{
-		auto const _Unsafe_eit = _Eit - _Utf_t::max_supported_symbol_size;
-		while (_It < _Unsafe_eit)
-			_Outf_t::write(_Utf_t::read(_It, [] {}), _Oit);
+		if (_Eit - _It >= _Utf_t::max_supported_symbol_size)
+		{
+			auto const _Fast_eit = _Eit - _Utf_t::max_supported_symbol_size;
+			while (_It < _Fast_eit)
+				_Outf_t::write(_Utf_t::read(_It, [] {}), _Oit);
+		}
 		while (_It != _Eit)
 			_Outf_t::write(_Utf_t::read(_It, [&_It, &_Eit]
 				{

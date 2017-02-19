@@ -24,58 +24,23 @@
 
 #include <ww898/utf_converters.hpp>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
+#if defined(WW898_BOOST_TEST_INCLUDED)
+#include <boost/test/included/unit_test.hpp>
+#else
+#include <boost/test/unit_test.hpp>
+#endif
+
+#include <boost/test/data/test_case.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
 #include <boost/format.hpp>
 
 #include <iostream>
 #include <codecvt>
-#include <cstdlib>
-
-#if defined(_WIN32)
-#define NOGDICAPMASKS
-#define NOVIRTUALKEYCODES
-#define NOWINMESSAGES
-#define NOWINSTYLES
-#define NOSYSMETRICS
-#define NOMENUS
-#define NOICONS
-#define NOKEYSTATES
-#define NOSYSCOMMANDS
-#define NORASTEROPS
-#define NOSHOWWINDOW
-#define OEMRESOURCE
-#define NOATOM
-#define NOCLIPBOARD
-#define NOCOLOR
-#define NOCTLMGR
-#define NODRAWTEXT
-#define NOGDI
-#define NOKERNEL
-#define NOUSER
-#define NONLS
-#define NOMB
-#define NOMEMMGR
-#define NOMETAFILE
-#define NOMINMAX
-#define NOMSG
-#define NOOPENFILE
-#define NOSCROLL
-#define NOSERVICE
-#define NOSOUND
-#define NOTEXTMETRIC
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-#define NOHELP
-#define NOPROFILER
-#define NODEFERWINDOWPOS
-#define NOMCX
-#include <windows.h>
-#endif
 
 #if defined(__linux__)
 #include <chrono>
@@ -84,22 +49,24 @@
 namespace ww898 {
 namespace test {
 
-namespace detail {
+BOOST_AUTO_TEST_SUITE(utf_converters)
 
-struct utf_tuple final
+namespace {
+
+struct utf_tuple_unicode final
 {
 	std::string utf8;
 	std::wstring utf16;
 	std::u32string utf32;
 };
 
-struct utf_tuple_out_of_utf16 final
+struct utf_tuple_supported final
 {
 	std::string utf8;
 	std::u32string utf32;
 };
 
-utf_tuple const _Ourpairs[] =
+utf_tuple_unicode const _Ourpairs_unicode[] =
 {
 	{
 		"\x24",
@@ -347,7 +314,7 @@ utf_tuple const _Ourpairs[] =
 	},
 };
 
-utf_tuple_out_of_utf16 const _Ourpairs_out_of_utf16[] =
+utf_tuple_supported const _Ourpairs_supported[] =
 {
 	{
 		"\xFA\x95\xA9\xB6\x83",
@@ -366,13 +333,13 @@ utf_tuple_out_of_utf16 const _Ourpairs_out_of_utf16[] =
 
 }
 
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf16, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf8_to_utf16, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::wstring _Res;
 	auto const _It = _Tuple.utf8.c_str();
 	auto const _Eit = utf::convz<utf::utf8, utf::utf16>(_It, std::back_inserter(_Res)) - 1;
 	std::wstring _Res2;
-	utf::conv<utf::utf8, utf::utf16>(_Tuple.utf8.begin(), _Tuple.utf8.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf8, utf::utf16>(_Tuple.utf8.cbegin(), _Tuple.utf8.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf16 == _Res &&
 		_Tuple.utf16 == _Res2;
@@ -381,13 +348,13 @@ BOOST_DATA_TEST_CASE(conv_utf8_to_utf16, boost::make_iterator_range(detail::_Our
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf32, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf8_to_utf32, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::u32string _Res;
 	auto const _It = _Tuple.utf8.c_str();
 	auto const _Eit = utf::convz<utf::utf8, utf::utf32>(_It, std::back_inserter(_Res)) - 1;
 	std::u32string _Res2;
-	utf::conv<utf::utf8, utf::utf32>(_Tuple.utf8.begin(), _Tuple.utf8.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf8, utf::utf32>(_Tuple.utf8.cbegin(), _Tuple.utf8.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf32 == _Res &&
 		_Tuple.utf32 == _Res2;
@@ -396,13 +363,13 @@ BOOST_DATA_TEST_CASE(conv_utf8_to_utf32, boost::make_iterator_range(detail::_Our
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf16_to_utf8, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf16_to_utf8, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::string _Res;
 	auto const _It = _Tuple.utf16.c_str();
 	auto const _Eit = utf::convz<utf::utf16, utf::utf8>(_It, std::back_inserter(_Res)) - 1;
 	std::string _Res2;
-	utf::conv<utf::utf16, utf::utf8>(_Tuple.utf16.begin(), _Tuple.utf16.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf16, utf::utf8>(_Tuple.utf16.cbegin(), _Tuple.utf16.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf8 == _Res &&
 		_Tuple.utf8 == _Res2;
@@ -411,13 +378,13 @@ BOOST_DATA_TEST_CASE(conv_utf16_to_utf8, boost::make_iterator_range(detail::_Our
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::u32string _Res;
 	auto const _It = _Tuple.utf16.c_str();
 	auto const _Eit = utf::convz<utf::utf16, utf::utf32>(_It, std::back_inserter(_Res)) - 1;
 	std::u32string _Res2;
-	utf::conv<utf::utf16, utf::utf32>(_Tuple.utf16.begin(), _Tuple.utf16.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf16, utf::utf32>(_Tuple.utf16.cbegin(), _Tuple.utf16.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf32 == _Res &&
 		_Tuple.utf32 == _Res2;
@@ -426,13 +393,13 @@ BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(detail::_Ou
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf8, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf32_to_utf8, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::string _Res;
 	auto const _It = _Tuple.utf32.c_str();
 	auto const _Eit = utf::convz<utf::utf32, utf::utf8>(_It, std::back_inserter(_Res)) - 1;
 	std::string _Res2;
-	utf::conv<utf::utf32, utf::utf8>(_Tuple.utf32.begin(), _Tuple.utf32.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf32, utf::utf8>(_Tuple.utf32.cbegin(), _Tuple.utf32.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf8 == _Res &&
 		_Tuple.utf8 == _Res2;
@@ -441,13 +408,13 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf8, boost::make_iterator_range(detail::_Our
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	std::wstring _Res;
 	auto const _It = _Tuple.utf32.c_str();
 	auto const _Eit = utf::convz<utf::utf32, utf::utf16>(_It, std::back_inserter(_Res)) - 1;
 	std::wstring _Res2;
-	utf::conv<utf::utf32, utf::utf16>(_Tuple.utf32.begin(), _Tuple.utf32.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf32, utf::utf16>(_Tuple.utf32.cbegin(), _Tuple.utf32.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf16 == _Res &&
 		_Tuple.utf16 == _Res2;
@@ -456,13 +423,13 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(detail::_Ou
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_supported, boost::make_iterator_range(_Ourpairs_supported), _Tuple)
 {
 	std::string _Res;
 	auto const _It = _Tuple.utf32.c_str();
 	auto const _Eit = utf::convz<utf::utf32, utf::utf8>(_It, std::back_inserter(_Res)) - 1;
 	std::string _Res2;
-	utf::conv<utf::utf32, utf::utf8>(_Tuple.utf32.begin(), _Tuple.utf32.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf32, utf::utf8>(_Tuple.utf32.cbegin(), _Tuple.utf32.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf8 == _Res &&
 		_Tuple.utf8 == _Res2;
@@ -471,13 +438,13 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_out_of_utf16, boost::make_iterator_range
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
+BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_supported, boost::make_iterator_range(_Ourpairs_supported), _Tuple)
 {
 	std::u32string _Res;
 	auto const _It = _Tuple.utf8.c_str();
 	auto const _Eit = utf::convz<utf::utf8, utf::utf32>(_It, std::back_inserter(_Res)) - 1;
 	std::u32string _Res2;
-	utf::conv<utf::utf8, utf::utf32>(_Tuple.utf8.begin(), _Tuple.utf8.end(), std::back_inserter(_Res2));
+	utf::conv<utf::utf8, utf::utf32>(_Tuple.utf8.cbegin(), _Tuple.utf8.cend(), std::back_inserter(_Res2));
 	auto const _Success =
 		_Tuple.utf32 == _Res &&
 		_Tuple.utf32 == _Res2;
@@ -486,7 +453,7 @@ BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_out_of_utf16, boost::make_iterator_range
 	BOOST_TEST_REQUIRE(_Success2);
 }
 
-BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf8::max_unicode_symbol_size;
 	std::string _Res;
@@ -503,7 +470,7 @@ BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(detail::_Ourpairs), _
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf16::max_unicode_symbol_size;
 	std::wstring _Res;
@@ -521,7 +488,7 @@ BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(detail::_Ourpairs), 
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(detail::_Ourpairs), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(_Ourpairs_unicode), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf32::max_unicode_symbol_size;
 	std::u32string _Res;
@@ -539,7 +506,7 @@ BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(detail::_Ourpairs), 
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf8_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf8_supported, boost::make_iterator_range(_Ourpairs_supported), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf8::max_supported_symbol_size;
 	std::string _Res;
@@ -556,7 +523,7 @@ BOOST_DATA_TEST_CASE(size_utf8_out_of_utf16, boost::make_iterator_range(detail::
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-BOOST_DATA_TEST_CASE(size_utf32_out_of_utf16, boost::make_iterator_range(detail::_Ourpairs_out_of_utf16), _Tuple)
+BOOST_DATA_TEST_CASE(size_utf32_supported, boost::make_iterator_range(_Ourpairs_supported), _Tuple)
 {
 	static auto const max_symbol_size = utf::utf32::max_supported_symbol_size;
 	std::u32string _Res;
@@ -573,7 +540,7 @@ BOOST_DATA_TEST_CASE(size_utf32_out_of_utf16, boost::make_iterator_range(detail:
 	BOOST_TEST_REQUIRE(_Success);
 }
 
-namespace detail {
+namespace {
 
 inline uint64_t get_time() throw()
 {
@@ -653,7 +620,13 @@ inline uint64_t get_time_resolution() throw()
 
 }
 
-BOOST_AUTO_TEST_CASE(compare_performance)
+#if defined(WW898_ENABLE_PERFORMANCE_TESTS)
+#define WW898_PERFORMANCE_TESTS_MODE *boost::unit_test::enabled()
+#else
+#define WW898_PERFORMANCE_TESTS_MODE *boost::unit_test::disabled()
+#endif
+
+BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 {
 	static size_t const utf32_max_size = 16 * 1024 * 1024;
 	static size_t const utf16_max_size = utf32_max_size * utf::utf16::max_unicode_symbol_size;
@@ -684,7 +657,7 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		_Utf32.push_back(_Cp);
 	}
 
-	auto const _Resolution = detail::get_time_resolution();
+	auto const _Resolution = get_time_resolution();
 	std::cout << (boost::format("Resolution: %u") % _Resolution).str() << std::endl;
 
 	double _Utf8_utf16_duration;
@@ -695,9 +668,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf8.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf32, utf::utf8>(&*_Utf32.begin(), &*_Utf32.end(), std::back_inserter(_Utf8));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf32, utf::utf8>(&_Utf32.front(), &_Utf32.back() + 1, std::back_inserter(_Utf8));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -709,9 +682,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf16.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf32, utf::utf16>(&*_Utf32.begin(), &*_Utf32.end(), std::back_inserter(_Utf16));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf32, utf::utf16>(&_Utf32.front(), &_Utf32.back() + 1, std::back_inserter(_Utf16));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -723,9 +696,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf8.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf16, utf::utf8>(&*_Utf16.begin(), &*_Utf16.end(), std::back_inserter(_Utf8));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf16, utf::utf8>(&_Utf16.front(), &_Utf16.back() + 1, std::back_inserter(_Utf8));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -738,9 +711,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf32.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf16, utf::utf32>(&*_Utf16.begin(), &*_Utf16.end(), std::back_inserter(_Utf32));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf16, utf::utf32>(&_Utf16.front(), &_Utf16.back() + 1, std::back_inserter(_Utf32));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -752,9 +725,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf16.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf8, utf::utf16>(&*_Utf8.begin(), &*_Utf8.end(), std::back_inserter(_Utf16));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf8, utf::utf16>(&_Utf8.front(), &_Utf8.back() + 1, std::back_inserter(_Utf16));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -767,9 +740,9 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Utf32.clear();
-			auto const _Start_time = detail::get_time();
-			utf::conv<utf::utf8, utf::utf32>(&*_Utf8.begin(), &*_Utf8.end(), std::back_inserter(_Utf32));
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			utf::conv<utf::utf8, utf::utf32>(&_Utf8.front(), &_Utf8.back() + 1, std::back_inserter(_Utf32));
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
@@ -780,7 +753,7 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t
 #if defined(__GNUC__)
 		// Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
-		, 0x10ffffUL
+		, ww898::utf::max_unicode_code_point
 		, std::little_endian
 #endif
 		>> _Conv;
@@ -792,13 +765,13 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Res.clear();
-			auto const _Start_time = detail::get_time();
-			_Res = _Conv.to_bytes(&*_Utf16.begin(), &*_Utf16.end());
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			_Res = _Conv.to_bytes(&_Utf16.front(), &_Utf16.back() + 1);
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		BOOST_TEST_REQUIRE(_Res.size() == _Utf8.size());
-		auto const _Same = memcmp(&*_Utf8.begin(), &*_Res.begin(), _Utf8.size()) == 0;
+		auto const _Same = memcmp(&_Utf8.front(), &*_Res.cbegin(), _Utf8.size()) == 0;
 		BOOST_TEST_REQUIRE(_Same);
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
 		std::cout << (boost::format("UTF16 ==> UTF8 : %fs (%+.2f%%)") % _Duration % (100 * (_Duration / _Utf16_utf8_duration - 1))).str() << std::endl;
@@ -811,20 +784,24 @@ BOOST_AUTO_TEST_CASE(compare_performance)
 		for (auto _N = iterations; _N-- > 0;)
 		{
 			_Res.clear();
-			auto const _Start_time = detail::get_time();
-			_Res = _Conv.from_bytes(&*_Utf8.begin(), &*_Utf8.end());
-			auto const _End_time = detail::get_time();
+			auto const _Start_time = get_time();
+			_Res = _Conv.from_bytes(&_Utf8.front(), &_Utf8.back() + 1);
+			auto const _End_time = get_time();
 			_Sum_duration += _End_time - _Start_time;
 		}
 		BOOST_TEST_REQUIRE(_Res.size() == _Utf16.size());
-		auto const _Same = memcmp(&*_Utf16.begin(), &*_Res.begin(), sizeof(wchar_t) * _Utf16.size()) == 0;
+		auto const _Same = memcmp(&_Utf16.front(), &*_Res.cbegin(), sizeof(wchar_t) * _Utf16.size()) == 0;
 		BOOST_TEST_REQUIRE(_Same);
 		auto const _Duration = static_cast<double>(_Sum_duration) / iterations / _Resolution;
 		std::cout << (boost::format("UTF8  ==> UTF16: %fs (%+.2f%%)") % _Duration % (100 * (_Duration / _Utf8_utf16_duration - 1))).str() << std::endl;
 	}
 }
 
+#undef WW898_PERFORMANCE_TESTS_MODE
+
+BOOST_AUTO_TEST_SUITE_END()
+
 }}
 
-BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::detail::utf_tuple)
-BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::detail::utf_tuple_out_of_utf16)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::utf_converters::utf_tuple_unicode)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::utf_converters::utf_tuple_supported)
