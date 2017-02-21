@@ -368,10 +368,13 @@ template<
     typename Oit,
     bool is_random_access_iterator = std::is_base_of<
         std::random_access_iterator_tag,
-        typename std::iterator_traits<It>::iterator_category>::value>
+        typename std::iterator_traits<typename std::decay<It>::type>::iterator_category>::value>
 void conv(It && it, It && eit, Oit && oit)
 {
-    detail::conv_strategy<Utf, Outf, It, Oit, is_random_access_iterator>::func(
+    detail::conv_strategy<Utf, Outf,
+            typename std::decay<It>::type,
+            typename std::decay<Oit>::type,
+            is_random_access_iterator>::func(
         std::forward<It>(it),
         std::forward<It>(eit),
         std::forward<Oit>(oit));
