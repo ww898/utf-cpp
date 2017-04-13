@@ -1,4 +1,4 @@
-﻿#UTF-8/16/32 C++ library
+# UTF-8/16/32 C++ library
 This is the C++11 template based header only library to convert UFT-8/16/32 symbols and strings. Null-terminated strings are also supported.
 
 UTF-8 and UTF-32 (UCS-32) both support 31 bit wide code points `[0‥0x7FFFFFFF]`with no restriction. UTF-16 supports only unicode code points `[0‥0x10FFFF]` where high `[0xD800‥0xDBFF]` and low `[0xDC00‥0xDFFF]` surrogate regions are prohibited.
@@ -7,7 +7,7 @@ The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be from th
 - 4 bytes for unicode code points
 - 6 bytes for 31bit code points
 
-######UTF-16 surrogate decoder:
+###### UTF-16 surrogate decoder:
 |High\Low|DC00|DC01|…|DFFF|
 |:-:|:-:|:-:|:-:|:-:|
 |**D800**|010000|010001|…|0103FF|
@@ -15,7 +15,8 @@ The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be from th
 |**⋮**|⋮|⋮|⋱|⋮|
 |**DBFF**|10FC00|10FC01|…|10FFFF|
 
-##Supported compilers
+## Supported compilers
+
 Tested on following compilers:
 - Visual Studio 2013 Update 5
 - Visual Studio 2015 Update 3
@@ -23,7 +24,8 @@ Tested on following compilers:
 - GCC 5.4.0
 - Clang 3.8.0
 
-##Usage example
+## Usage example
+
 ```cpp
 // यूनिकोड
 static char const _Src[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
@@ -36,8 +38,8 @@ std::vector<char> _Utf8;
 utf::convz<utf::utf32, utf::utf8>(_Utf32.begin(), std::back_inserter(_Utf8));
 ```
 
-##Performance
-####Windows x86 (Visual Studio 2013 Update 5):
+## Performance
+#### Windows x86 (Visual Studio 2013 Update 5):
 ```cpp
 Running 225 test cases...
 Resolution: 2592001699
@@ -54,7 +56,7 @@ UTF8  ==> UTF16: 0.378968s (+74.24%)
 *** No errors detected
 ```
 
-####Windows x64 (Visual Studio 2013 Update 5):
+#### Windows x64 (Visual Studio 2013 Update 5):
 ```cpp
 Running 225 test cases...
 Resolution: 2592004604
@@ -71,7 +73,7 @@ UTF8  ==> UTF16: 0.318946s (+51.54%)
 *** No errors detected
 ```
 
-####Windows x86 (Visual Studio 2017):
+#### Windows x86 (Visual Studio 2017):
 ```cpp
 Running 225 test cases...
 Resolution: 2591999972
@@ -88,7 +90,7 @@ UTF8  ==> UTF16: 0.349681s (+30.00%)
 *** No errors detected
 ```
 
-####Windows x64 (Visual Studio 2017):
+#### Windows x64 (Visual Studio 2017):
 ```cpp
 Running 225 test cases...
 Resolution: 2591998081
@@ -105,7 +107,7 @@ UTF8  ==> UTF16: 0.311356s (+30.52%)
 *** No errors detected
 ```
 
-####Ubuntu 16.04 LTS x64 (GCC 5.4.0):
+#### Ubuntu 16.04 LTS x64 (GCC 5.4.0):
 ```cpp
 Running 225 test cases...
 Resolution: 2592003903
@@ -122,7 +124,7 @@ UTF8  ==> UTF16: 1.030013s (+448.36%)
 *** No errors detected
 ```
 
-####Ubuntu 16.04 LTS x64 (Clang 3.8.0):
+#### Ubuntu 16.04 LTS x64 (Clang 3.8.0):
 ```cpp
 Running 225 test cases...
 Resolution: 2592004346
@@ -139,5 +141,5 @@ UTF8  ==> UTF16: 0.592549s (+243.92%)
 *** No errors detected
 ```
 
-##Conversion table
+## Conversion table
 ![UTF-8/32 table](https://upload.wikimedia.org/wikipedia/commons/3/38/UTF-8_Encoding_Scheme.png)
