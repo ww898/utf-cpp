@@ -19,6 +19,7 @@ The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be from th
 Tested on following compilers:
 - Visual Studio 2013 Update 5
 - Visual Studio 2015 Update 3
+- Visual Studio 2017
 - GCC 5.4.0
 - Clang 3.8.0
 
@@ -66,6 +67,40 @@ UTF8  ==> UTF32: 0.168318s
 codecvt_utf8_utf16<wchar_t>:
 UTF16 ==> UTF8 : 0.463934s (+123.66%)
 UTF8  ==> UTF16: 0.318946s (+51.54%)
+
+*** No errors detected
+```
+
+####Windows x86 (Visual Studio 2017):
+```cpp
+Running 225 test cases...
+Resolution: 2591999972
+UTF32 ==> UTF8 : 0.273872s
+UTF32 ==> UTF16: 0.149031s
+UTF16 ==> UTF8 : 0.368761s
+UTF16 ==> UTF32: 0.098164s
+UTF8  ==> UTF16: 0.268979s
+UTF8  ==> UTF32: 0.166941s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.517618s (+40.37%)
+UTF8  ==> UTF16: 0.349681s (+30.00%)
+
+*** No errors detected
+```
+
+####Windows x64 (Visual Studio 2017):
+```cpp
+Running 225 test cases...
+Resolution: 2591998081
+UTF32 ==> UTF8 : 0.260009s
+UTF32 ==> UTF16: 0.141919s
+UTF16 ==> UTF8 : 0.257103s
+UTF16 ==> UTF32: 0.085505s
+UTF8  ==> UTF16: 0.238545s
+UTF8  ==> UTF32: 0.160184s
+codecvt_utf8_utf16<wchar_t>:
+UTF16 ==> UTF8 : 0.491465s (+91.15%)
+UTF8  ==> UTF16: 0.311356s (+30.52%)
 
 *** No errors detected
 ```

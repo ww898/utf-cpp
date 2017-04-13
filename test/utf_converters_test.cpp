@@ -26,6 +26,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <intrin.h>
 #endif
 
 #if defined(WW898_BOOST_TEST_INCLUDED)
