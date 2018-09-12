@@ -28,14 +28,14 @@ Tested on following compilers:
 
 ```cpp
 // यूनिकोड
-static char const _Src[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
+static char const u8str_orig[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
 using namespace ww898;
-std::u16string _Utf16;
-utf::convz<utf::utf8, utf::utf16>(_Src, std::back_inserter(_Utf16));
-std::u32string _Utf32;
-utf::conv<utf::utf16, utf::utf32>(_Utf16.begin(), _Utf16.end(), std::back_inserter(_Utf32));
-std::vector<char> _Utf8;
-utf::convz<utf::utf32, utf::utf8>(_Utf32.begin(), std::back_inserter(_Utf8));
+std::u16string u16str;
+utf::convz<utf::utf8, utf::utf16>(u8str_orig, std::back_inserter(u16str));
+std::u32string u32str;
+utf::conv<utf::utf16, utf::utf32>(u16str.begin(), u16str.end(), std::back_inserter(u32str));
+std::vector<char> u8str;
+utf::convz<utf::utf32, utf::utf8>(u32str.begin(), std::back_inserter(u8str));
 ```
 
 ## Performance
