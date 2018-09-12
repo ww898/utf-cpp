@@ -344,7 +344,7 @@ struct conv_strategy<Utf, Outf, It, Oit, true> final
 {
     static void func(It it, It const eit, Oit oit)
     {
-        if (eit - it >= Utf::max_supported_symbol_size)
+        if (static_cast<size_t>(eit - it) >= Utf::max_supported_symbol_size)
         {
             auto const fast_eit = eit - Utf::max_supported_symbol_size;
             while (it < fast_eit)
