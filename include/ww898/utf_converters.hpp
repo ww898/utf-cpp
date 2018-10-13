@@ -45,17 +45,17 @@ static uint16_t const max_surrogate_high = 0xDBFF;
 static uint16_t const min_surrogate_low = 0xDC00;
 static uint16_t const max_surrogate_low = 0xDFFF;
 
-inline bool is_surrogate_high(uint32_t const cp)
+inline bool is_surrogate_high(uint32_t const cp) throw()
 {
     return min_surrogate_high <= cp && cp <= max_surrogate_high;
 }
 
-inline bool is_surrogate_low(uint32_t const cp)
+inline bool is_surrogate_low(uint32_t const cp) throw()
 {
     return min_surrogate_low <= cp && cp <= max_surrogate_low;
 }
 
-inline bool is_surrogate(uint32_t const cp)
+inline bool is_surrogate(uint32_t const cp) throw()
 {
     return min_surrogate <= cp && cp <= max_surrogate;
 }
@@ -69,23 +69,24 @@ struct utf8 final
     static_assert(max_code_point == (1u << 31) - 1u, "Invalid maximum supported code point");
 
     template<
-        typename It>
-    static size_t size(It & it)
+        typename It,
+        typename NextFn>
+    static size_t sizech(It & it, NextFn && next_fn)
     {
-        uint8_t const chf = *it;
+        uint8_t const chf = *it++;
         if (chf < 0x80)
             return 1;
         else if (chf < 0xC0)
             throw std::runtime_error("Unexpected UTF8 slave symbol at master position");
-        else if (chf < 0xE0)
+        else if (next_fn(it), chf < 0xE0)
             return 2;
-        else if (chf < 0xF0)
+        else if (next_fn(it), chf < 0xF0)
             return 3;
-        else if (chf < 0xF8)
+        else if (next_fn(it), chf < 0xF8)
             return 4;
-        else if (chf < 0xFC)
+        else if (next_fn(it), chf < 0xFC)
             return 5;
-        else if (chf < 0xFE)
+        else if (next_fn(it), chf < 0xFE)
             return 6;
         else
             throw std::runtime_error("Invalid UTF8 master symbol");
@@ -93,8 +94,8 @@ struct utf8 final
 
     template<
         typename It,
-        typename VerifyIt>
-    static uint32_t read(It & it, VerifyIt && verify_it)
+        typename VerifyFn>
+    static uint32_t read(It & it, VerifyFn && verify_fn)
     {
         uint8_t const chf = *it++;
         if (chf < 0x80)      // 0xxx_xxxx
@@ -132,7 +133,7 @@ struct utf8 final
             throw std::runtime_error("Invalid UTF8 master symbol");
         while (extra-- > 0)
         {
-            verify_it();
+            verify_fn(it);
             uint8_t const chn = *it++;
             if (chn < 0x80 || 0xC0 <= chn)
                 throw std::runtime_error("Invalid UTF8 slave symbol");
@@ -196,13 +197,14 @@ struct utf16 final
     static_assert(max_code_point == 0x10000u + (1u << 20) - 1u, "Invalid maximum supported code point");
 
     template<
-        typename It>
-    static size_t size(It & it)
+        typename It,
+        typename NextFn>
+    static size_t sizech(It & it, NextFn && next_fn)
     {
-        uint16_t const chf = *it;
+        uint16_t const chf = *it++;
         if (chf < 0xD800 || 0xE000 <= chf)
             return 1;
-        else if (chf < 0xDC00)
+        else if (next_fn(it), chf < 0xDC00)
             return 2;
         else
             throw std::runtime_error("Unexpected UTF16 slave symbol at master position");
@@ -210,15 +212,15 @@ struct utf16 final
 
     template<
         typename It,
-        typename VerifyIt>
-    static uint32_t read(It & it, VerifyIt && verify_it)
+        typename VerifyFn>
+    static uint32_t read(It & it, VerifyFn && verify_fn)
     {
         uint16_t const chf = *it++;
         if (chf < 0xD800 || 0xE000 <= chf) // [0x0000‥0xD7FF] or [0xE000‥0xFFFF]
             return chf;
-        else if (chf < 0xDC00)              // [0xD800‥0xDBFF] [0xDC00‥0xDFFF]
+        else if (chf < 0xDC00)             // [0xD800‥0xDBFF] [0xDC00‥0xDFFF]
         {
-            verify_it();
+            verify_fn(it);
             uint16_t const chn = *it++;
             if (chn < 0xDC00 || 0xE000 <= chn)
                 throw std::runtime_error("Invalid UTF16 slave symbol");
@@ -258,16 +260,18 @@ struct utf32 final
     static_assert(max_code_point == (1u << 31) - 1u, "Invalid maximum supported code point");
 
     template<
-        typename It>
-    static size_t size(It &)
+        typename It,
+        typename NextFn>
+    static size_t sizech(It & it, NextFn &&)
     {
+        ++it;
         return 1;
     }
 
     template<
         typename It,
-        typename VerifyIt>
-    static uint32_t read(It & it, VerifyIt &&)
+        typename VerifyFn>
+    static uint32_t read(It & it, VerifyFn &&)
     {
         return *it++;
     }
@@ -286,9 +290,36 @@ struct utf32 final
 template<
     typename Utf,
     typename It>
-size_t size(It it)
+size_t sizech(It it)
 {
-    return Utf::size(it);
+    return Utf::sizech(it, [] (It &) {});
+}
+
+template<
+    typename Utf,
+    typename It>
+size_t sizez(It it)
+{
+    size_t size = 0;
+    while (*it)
+        size += Utf::sizech(it, [] (It & it) { ++it; });
+    return size;
+}
+
+template<
+    typename Utf,
+    typename It>
+size_t size(It it, It const eit)
+{
+    auto const next_fn = [&eit] (It & it)
+        {
+            if (it++ == eit)
+                throw std::runtime_error("Not enough input");
+        };
+    size_t size = 0;
+    while (it != eit)
+        size += Utf::sizech(it, next_fn);
+    return size;
 }
 
 template<
@@ -300,7 +331,7 @@ Oit convz(It it, Oit oit)
 {
     while (true)
     {
-        auto const cp = Utf::read(it, [] {});
+        auto const cp = Utf::read(it, [] (It &) {});
         if (!cp)
             return oit;
         Outf::write(cp, oit);
@@ -324,14 +355,16 @@ template<
     typename Oit>
 struct conv_strategy<Utf, Outf, It, Oit, false> final
 {
-    static void func(It it, It const eit, Oit oit)
+    Oit operator()(It it, It const eit, Oit oit)
     {
+        auto const verify_fn = [&eit] (It & it)
+            {
+                if (it == eit)
+                    throw std::runtime_error("Not enough input");
+            };
         while (it != eit)
-            Outf::write(Utf::read(it, [&it, &eit]
-                {
-                    if (it == eit)
-                        throw std::runtime_error("Not enough input");
-                }), oit);
+            Outf::write(Utf::read(it, verify_fn), oit);
+        return oit;
     }
 };
 
@@ -342,20 +375,22 @@ template<
     typename Oit>
 struct conv_strategy<Utf, Outf, It, Oit, true> final
 {
-    static void func(It it, It const eit, Oit oit)
+    Oit operator()(It it, It const eit, Oit oit)
     {
         if (static_cast<size_t>(eit - it) >= Utf::max_supported_symbol_size)
         {
             auto const fast_eit = eit - Utf::max_supported_symbol_size;
             while (it < fast_eit)
-                Outf::write(Utf::read(it, [] {}), oit);
+                Outf::write(Utf::read(it, [] (It &) {}), oit);
         }
+        auto const verify_fn = [&eit] (It & it)
+            {
+                if (it == eit)
+                    throw std::runtime_error("Not enough input");
+            };
         while (it != eit)
-            Outf::write(Utf::read(it, [&it, &eit]
-                {
-                    if (it == eit)
-                        throw std::runtime_error("Not enough input");
-                }), oit);
+            Outf::write(Utf::read(it, verify_fn), oit);
+        return oit;
     }
 };
 
@@ -369,12 +404,12 @@ template<
     bool is_random_access_iterator = std::is_base_of<
         std::random_access_iterator_tag,
         typename std::iterator_traits<typename std::decay<It>::type>::iterator_category>::value>
-void conv(It && it, It && eit, Oit && oit)
+Oit conv(It && it, It && eit, Oit && oit)
 {
-    detail::conv_strategy<Utf, Outf,
+    return detail::conv_strategy<Utf, Outf,
             typename std::decay<It>::type,
             typename std::decay<Oit>::type,
-            is_random_access_iterator>::func(
+            is_random_access_iterator>()(
         std::forward<It>(it),
         std::forward<It>(eit),
         std::forward<Oit>(oit));

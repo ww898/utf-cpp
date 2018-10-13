@@ -452,88 +452,104 @@ BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_supported, boost::make_iterator_range(su
 BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(unicode_test_data), tuple)
 {
     static auto const max_symbol_size = utf::utf8::max_unicode_symbol_size;
-    std::string res;
-    for (auto str = tuple.utf8.c_str(); *str;)
+    size_t total_size = 0;
+    for (auto str = tuple.utf8.data(); *str;)
     {
-        auto const size = utf::size<utf::utf8>(str);
+        auto const size = utf::sizech<utf::utf8>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
-        auto const end_str = str + size;
-        res += std::string(str, end_str);
-        str = end_str;
+        total_size += size;
+        str += size;
     }
-    auto const success = res == tuple.utf8;
-    BOOST_TEST_REQUIRE(success);
+
+    auto const total_size1 = utf::sizez<utf::utf8>(tuple.utf8.data());
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utf8>(tuple.utf8.begin(), tuple.utf8.end());
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(unicode_test_data), tuple)
 {
     static auto const max_symbol_size = utf::utf16::max_unicode_symbol_size;
-    std::u16string res;
-    for (auto str = tuple.utf16.c_str(); *str;)
+    size_t total_size = 0;
+    for (auto str = tuple.utf16.data(); *str;)
     {
-        auto const size = utf::size<utf::utf16>(str);
+        auto const size = utf::sizech<utf::utf16>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
-        auto const end_str = str + size;
-        res += std::u16string(str, end_str);
-        str = end_str;
+        total_size += size;
+        str += size;
         
     }
-    auto const success = res == tuple.utf16;
-    BOOST_TEST_REQUIRE(success);
+
+    auto const total_size1 = utf::sizez<utf::utf16>(tuple.utf16.data());
+    BOOST_TEST_REQUIRE(tuple.utf16.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utf16>(tuple.utf16.begin(), tuple.utf16.end());
+    BOOST_TEST_REQUIRE(tuple.utf16.size() == total_size2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(unicode_test_data), tuple)
 {
     static auto const max_symbol_size = utf::utf32::max_unicode_symbol_size;
-    std::u32string res;
-    for (auto str = tuple.utf32.c_str(); *str;)
+    size_t total_size = 0;
+    for (auto str = tuple.utf32.data(); *str;)
     {
-        auto const size = utf::size<utf::utf32>(str);
+        auto const size = utf::sizech<utf::utf32>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
-        auto const end_str = str + size;
-        res += std::u32string(str, end_str);
-        str = end_str;
-        
+        total_size += size;
+        str += size;
     }
-    auto const success = res == tuple.utf32;
-    BOOST_TEST_REQUIRE(success);
+
+    auto const total_size1 = utf::sizez<utf::utf32>(tuple.utf32.data());
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utf32>(tuple.utf32.begin(), tuple.utf32.end());
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf8_supported, boost::make_iterator_range(supported_test_data), tuple)
 {
     static auto const max_symbol_size = utf::utf8::max_supported_symbol_size;
-    std::string res;
-    for (auto str = tuple.utf8.c_str(); *str;)
+    size_t total_size = 0;
+    for (auto str = tuple.utf8.data(); *str;)
     {
-        auto const size = utf::size<utf::utf8>(str);
+        auto const size = utf::sizech<utf::utf8>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
-        auto const end_str = str + size;
-        res += std::string(str, end_str);
-        str = end_str;
+        total_size += size;
+        str += size;
     }
-    auto const success = res == tuple.utf8;
-    BOOST_TEST_REQUIRE(success);
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size);
+
+    auto const total_size1 = utf::sizez<utf::utf8>(tuple.utf8.data());
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utf8>(tuple.utf8.begin(), tuple.utf8.end());
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf32_supported, boost::make_iterator_range(supported_test_data), tuple)
 {
-    static auto const max_symbol_size = utf::utf32::max_supported_symbol_size;
-    std::u32string res;
-    for (auto str = tuple.utf32.c_str(); *str;)
+    static size_t const max_symbol_size = utf::utf32::max_supported_symbol_size;
+    size_t total_size = 0;
+    for (auto str = tuple.utf32.data(); *str;)
     {
-        auto const size = utf::size<utf::utf32>(str);
+        auto const size = utf::sizech<utf::utf32>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
-        auto const end_str = str + size;
-        res += std::u32string(str, end_str);
-        str = end_str;
+        total_size += size;
+        str += size;
     }
-    auto const success = res == tuple.utf32;
-    BOOST_TEST_REQUIRE(success);
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size);
+
+    auto const total_size1 = utf::sizez<utf::utf32>(tuple.utf32.data());
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utf32>(tuple.utf32.begin(), tuple.utf32.end());
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size2);
 }
 
 namespace {
