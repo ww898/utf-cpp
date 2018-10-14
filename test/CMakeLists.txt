@@ -5,6 +5,9 @@ enable_language(CXX)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "valid configurations" FORCE)
 
 find_package(Boost REQUIRED)
+if(NOT Boost_FOUND)
+	message(FATAL_ERROR "Failed to find boost library")
+endif()
 
 include_directories(../include)
 include_directories(${Boost_INCLUDE_DIRS})

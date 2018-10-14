@@ -1,7 +1,7 @@
 ﻿/*
  * MIT License
  * 
- * Copyright (c) 2017 Mikhail Pilin
+ * Copyright (c) 2017-2018 Mikhail Pilin
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *  
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * THE SOFTWARE IS PROVIDED "AS IS{ WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -57,7 +57,7 @@ namespace {
 struct unicode_tuple final
 {
     std::string utf8;
-    std::wstring utf16;
+    std::u16string utf16;
     std::u32string utf32;
 };
 
@@ -70,116 +70,101 @@ struct supported_tuple final
 unicode_tuple const unicode_test_data[] =
 {
     {
-        "\x24",
-        L"\x0024",
-        {
-            0x00000024
-        }
+        { '\x24' },
+        { 0x0024 },
+        { 0x00000024 }
     }, // $
 
     {
-        "\xC2\xA2",
-        L"\x00A2",
-        {
-            0x000000A2
-        }
+        { '\xC2', '\xA2' },
+        { 0x00A2 },
+        { 0x000000A2 }
     }, // ¢
 
     {
-        "\xE2\x82\xAC",
-        L"\x20AC",
-        {
-            0x000020AC
-        }
+        { '\xE2', '\x82', '\xAC' },
+        { 0x20AC },
+        { 0x000020AC }
     }, // €
 
     {
-        "\xF0\x90\x8D\x88",
-        L"\xD800\xDF48",
-        {
-            0x00010348
-        }
+        { '\xF0', '\x90', '\x8D', '\x88' },
+        { 0xD800, 0xDF48 },
+        { 0x00010348 }
     }, // 𐍈
 
     {
-        "\xF0\xA4\xAD\xA2",
-        L"\xD852\xDF62",
-        {
-            0x00024B62
-        }
+        { '\xF0', '\xA4', '\xAD', '\xA2' },
+        { 0xD852, 0xDF62 },
+        { 0x00024B62 }
     }, // 𤭢
 
     {
-        "\xF0\x90\x90\xB7",
-        L"\xD801\xDC37",
-        {
-            0x00010437
-        }
+        { '\xF0', '\x90', '\x90', '\xB7' },
+        { 0xD801, 0xDC37 },
+        { 0x00010437 }
     }, // 𐐷
 
     {
-        "\xEF\xAB\x82",
-        L"\xFAC2",
-        {
-            0x0000FAC2
-        }
+        { '\xEF', '\xAB', '\x82' },
+        { 0xFAC2 },
+        { 0x0000FAC2 }
     }, // 輸
 
     {
-        "\xD0\xAE\xD0\xBD\xD0\xB8\xD0\xBA\xD0\xBE\xD0\xB4",
-        L"\x042E\x043D\x0438\x043A\x043E\x0434",
-        {
-            0x0000042E, 0x0000043D, 0x00000438, 0x0000043A, 0x0000043E, 0x00000434
-        }
+        { '\xD0', '\xAE', '\xD0', '\xBD', '\xD0', '\xB8', '\xD0', '\xBA', '\xD0', '\xBE', '\xD0', '\xB4' },
+        { 0x042E, 0x043D, 0x0438, 0x043A, 0x043E, 0x0434 },
+        { 0x0000042E, 0x0000043D, 0x00000438, 0x0000043A, 0x0000043E, 0x00000434 }
     }, // Юникод
 
     {
-        "\xC5\xAA\x6E\xC4\xAD\x63\xC5\x8D\x64\x65\xCC\xBD",
-        L"\x016A\x006E\x012D\x0063\x014D\x0064\x0065\x033D",
-        {
-            0x0000016A, 0x0000006E, 0x0000012D, 0x00000063, 0x0000014D, 0x00000064, 0x00000065, 0x0000033D
-        }
+        { '\xC5', '\xAA', '\x6E', '\xC4', '\xAD', '\x63', '\xC5', '\x8D', '\x64', '\x65', '\xCC', '\xBD' },
+        { 0x016A, 0x006E, 0x012D, 0x0063, 0x014D, 0x0064, 0x0065, 0x033D },
+        { 0x0000016A, 0x0000006E, 0x0000012D, 0x00000063, 0x0000014D, 0x00000064, 0x00000065, 0x0000033D }
     }, // Ūnĭcōde̽
 
     {
-        "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1",
-        L"\x092F\x0942\x0928\x093F\x0915\x094B\x0921",
         {
-            0x0000092F, 0x00000942, 0x00000928, 0x0000093F, 0x00000915, 0x0000094B, 0x00000921
-        }
+            '\xE0', '\xA4', '\xAF', '\xE0', '\xA5', '\x82', '\xE0', '\xA4', '\xA8', '\xE0', '\xA4', '\xBF', '\xE0', '\xA4', '\x95', '\xE0', '\xA5', '\x8B',
+            '\xE0', '\xA4', '\xA1'
+        },
+        { 0x092F, 0x0942, 0x0928, 0x093F, 0x0915, 0x094B, 0x0921 },
+        { 0x0000092F, 0x00000942, 0x00000928, 0x0000093F, 0x00000915, 0x0000094B, 0x00000921 }
     }, // यूनिकोड
 
     {
-        "\x41\xE2\x89\xA2\xCE\x91\x2E",
-        L"\x0041\x2262\x0391\x002E",
-        {
-            0x00000041, 0x00002262, 0x00000391, 0x0000002E
-        }
+        { '\x41', '\xE2', '\x89', '\xA2', '\xCE', '\x91', '\x2E' },
+        { 0x0041, 0x2262, 0x0391, 0x002E },
+        { 0x00000041, 0x00002262, 0x00000391, 0x0000002E }
     }, // A≢Α.
 
     {
-        "\xED\x95\x9C\xEA\xB5\xAD\xEC\x96\xB4",
-        L"\xD55C\xAD6D\xC5B4",
-        {
-            0x0000D55C, 0x0000AD6D, 0x0000C5B4
-        }
+        { '\xED', '\x95', '\x9C', '\xEA', '\xB5', '\xAD', '\xEC', '\x96', '\xB4' },
+        { 0xD55C, 0xAD6D, 0xC5B4 },
+        { 0x0000D55C, 0x0000AD6D, 0x0000C5B4 }
     }, // 한국어
 
     {
-        "\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E",
-        L"\x65E5\x672C\x8A9E",
-        {
-            0x000065E5, 0x0000672C, 0x00008A9E
-        }
+        { '\xE6', '\x97', '\xA5', '\xE6', '\x9C', '\xAC', '\xE8', '\xAA', '\x9E' },
+        { 0x65E5, 0x672C, 0x8A9E },
+        { 0x000065E5, 0x0000672C, 0x00008A9E }
     }, // 日本語
 
     {
-        "\xE1\x9B\x81\xE1\x9A\xB3\xE1\x9B\xAB\xE1\x9B\x97\xE1\x9A\xA8\xE1\x9A\xB7\xE1\x9B\xAB\xE1\x9A\xB7\xE1\x9B\x9A\xE1\x9A\xA8\xE1\x9B\x8B\xE1\x9B"
-        "\xAB\xE1\x9B\x96\xE1\x9A\xA9\xE1\x9B\x8F\xE1\x9A\xAA\xE1\x9A\xBE\xE1\x9B\xAB\xE1\x9A\xA9\xE1\x9A\xBE\xE1\x9B\x9E\xE1\x9B\xAB\xE1\x9A\xBB\xE1"
-        "\x9B\x81\xE1\x9B\x8F\xE1\x9B\xAB\xE1\x9A\xBE\xE1\x9B\x96\xE1\x9B\xAB\xE1\x9A\xBB\xE1\x9B\x96\xE1\x9A\xAA\xE1\x9A\xB1\xE1\x9B\x97\xE1\x9B\x81"
-        "\xE1\x9A\xAA\xE1\x9A\xA7\xE1\x9B\xAB\xE1\x9B\x97\xE1\x9B\x96\xE1\x9B\xAC",
-        L"\x16C1\x16B3\x16EB\x16D7\x16A8\x16B7\x16EB\x16B7\x16DA\x16A8\x16CB\x16EB\x16D6\x16A9\x16CF\x16AA\x16BE\x16EB\x16A9\x16BE\x16DE\x16EB\x16BB"
-        L"\x16C1\x16CF\x16EB\x16BE\x16D6\x16EB\x16BB\x16D6\x16AA\x16B1\x16D7\x16C1\x16AA\x16A7\x16EB\x16D7\x16D6\x16EC",
+        {
+            '\xE1', '\x9B', '\x81', '\xE1', '\x9A', '\xB3', '\xE1', '\x9B', '\xAB', '\xE1', '\x9B', '\x97', '\xE1', '\x9A', '\xA8', '\xE1', '\x9A', '\xB7',
+            '\xE1', '\x9B', '\xAB', '\xE1', '\x9A', '\xB7', '\xE1', '\x9B', '\x9A', '\xE1', '\x9A', '\xA8', '\xE1', '\x9B', '\x8B', '\xE1', '\x9B', '\xAB',
+            '\xE1', '\x9B', '\x96', '\xE1', '\x9A', '\xA9', '\xE1', '\x9B', '\x8F', '\xE1', '\x9A', '\xAA', '\xE1', '\x9A', '\xBE', '\xE1', '\x9B', '\xAB',
+            '\xE1', '\x9A', '\xA9', '\xE1', '\x9A', '\xBE', '\xE1', '\x9B', '\x9E', '\xE1', '\x9B', '\xAB', '\xE1', '\x9A', '\xBB', '\xE1', '\x9B', '\x81',
+            '\xE1', '\x9B', '\x8F', '\xE1', '\x9B', '\xAB', '\xE1', '\x9A', '\xBE', '\xE1', '\x9B', '\x96', '\xE1', '\x9B', '\xAB', '\xE1', '\x9A', '\xBB',
+            '\xE1', '\x9B', '\x96', '\xE1', '\x9A', '\xAA', '\xE1', '\x9A', '\xB1', '\xE1', '\x9B', '\x97', '\xE1', '\x9B', '\x81', '\xE1', '\x9A', '\xAA',
+            '\xE1', '\x9A', '\xA7', '\xE1', '\x9B', '\xAB', '\xE1', '\x9B', '\x97', '\xE1', '\x9B', '\x96', '\xE1', '\x9B', '\xAC'
+        },
+        {
+            0x16C1, 0x16B3, 0x16EB, 0x16D7, 0x16A8, 0x16B7, 0x16EB, 0x16B7, 0x16DA, 0x16A8, 0x16CB, 0x16EB, 0x16D6, 0x16A9, 0x16CF, 0x16AA, 0x16BE, 0x16EB,
+            0x16A9, 0x16BE, 0x16DE, 0x16EB, 0x16BB, 0x16C1, 0x16CF, 0x16EB, 0x16BE, 0x16D6, 0x16EB, 0x16BB, 0x16D6, 0x16AA, 0x16B1, 0x16D7, 0x16C1, 0x16AA,
+            0x16A7, 0x16EB, 0x16D7, 0x16D6, 0x16EC
+        },
         {
             0x000016C1, 0x000016B3, 0x000016EB, 0x000016D7, 0x000016A8, 0x000016B7, 0x000016EB, 0x000016B7, 0x000016DA, 0x000016A8, 0x000016CB, 0x000016EB,
             0x000016D6, 0x000016A9, 0x000016CF, 0x000016AA, 0x000016BE, 0x000016EB, 0x000016A9, 0x000016BE, 0x000016DE, 0x000016EB, 0x000016BB, 0x000016C1,
@@ -189,11 +174,17 @@ unicode_tuple const unicode_test_data[] =
     }, // ᛁᚳ᛫ᛗᚨᚷ᛫ᚷᛚᚨᛋ᛫ᛖᚩᛏᚪᚾ᛫ᚩᚾᛞ᛫ᚻᛁᛏ᛫ᚾᛖ᛫ᚻᛖᚪᚱᛗᛁᚪᚧ᛫ᛗᛖ᛬
 
     {
-        "\xE1\x9A\x9B\xE1\x9A\x9B\xE1\x9A\x89\xE1\x9A\x91\xE1\x9A\x85\xE1\x9A\x94\xE1\x9A\x89\xE1\x9A\x89\xE1\x9A\x94\xE1\x9A\x8B\xE1\x9A\x80\xE1\x9A"
-        "\x94\xE1\x9A\x88\xE1\x9A\x94\xE1\x9A\x80\xE1\x9A\x8D\xE1\x9A\x82\xE1\x9A\x90\xE1\x9A\x85\xE1\x9A\x91\xE1\x9A\x80\xE1\x9A\x85\xE1\x9A\x94\xE1"
-        "\x9A\x8B\xE1\x9A\x8C\xE1\x9A\x93\xE1\x9A\x85\xE1\x9A\x90\xE1\x9A\x9C",
-        L"\x169B\x169B\x1689\x1691\x1685\x1694\x1689\x1689\x1694\x168B\x1680\x1694\x1688\x1694\x1680\x168D\x1682\x1690\x1685\x1691\x1680\x1685\x1694"
-        L"\x168B\x168C\x1693\x1685\x1690\x169C",
+        {
+            '\xE1', '\x9A', '\x9B', '\xE1', '\x9A', '\x9B', '\xE1', '\x9A', '\x89', '\xE1', '\x9A', '\x91', '\xE1', '\x9A', '\x85', '\xE1', '\x9A', '\x94',
+            '\xE1', '\x9A', '\x89', '\xE1', '\x9A', '\x89', '\xE1', '\x9A', '\x94', '\xE1', '\x9A', '\x8B', '\xE1', '\x9A', '\x80', '\xE1', '\x9A', '\x94',
+            '\xE1', '\x9A', '\x88', '\xE1', '\x9A', '\x94', '\xE1', '\x9A', '\x80', '\xE1', '\x9A', '\x8D', '\xE1', '\x9A', '\x82', '\xE1', '\x9A', '\x90',
+            '\xE1', '\x9A', '\x85', '\xE1', '\x9A', '\x91', '\xE1', '\x9A', '\x80', '\xE1', '\x9A', '\x85', '\xE1', '\x9A', '\x94', '\xE1', '\x9A', '\x8B',
+            '\xE1', '\x9A', '\x8C', '\xE1', '\x9A', '\x93', '\xE1', '\x9A', '\x85', '\xE1', '\x9A', '\x90', '\xE1', '\x9A', '\x9C'
+        },
+        {
+            0x169B, 0x169B, 0x1689, 0x1691, 0x1685, 0x1694, 0x1689, 0x1689, 0x1694, 0x168B, 0x1680, 0x1694, 0x1688, 0x1694, 0x1680, 0x168D, 0x1682, 0x1690,
+            0x1685, 0x1691, 0x1680, 0x1685, 0x1694, 0x168B, 0x168C, 0x1693, 0x1685, 0x1690, 0x169C
+        },
         {
             0x0000169B, 0x0000169B, 0x00001689, 0x00001691, 0x00001685, 0x00001694, 0x00001689, 0x00001689, 0x00001694, 0x0000168B, 0x00001680, 0x00001694,
             0x00001688, 0x00001694, 0x00001680, 0x0000168D, 0x00001682, 0x00001690, 0x00001685, 0x00001691, 0x00001680, 0x00001685, 0x00001694, 0x0000168B,
@@ -202,12 +193,20 @@ unicode_tuple const unicode_test_data[] =
     }, // ᚛᚛ᚉᚑᚅᚔᚉᚉᚔᚋ ᚔᚈᚔ ᚍᚂᚐᚅᚑ ᚅᚔᚋᚌᚓᚅᚐ᚜
 
     {
-        "\xE2\xA0\x8A\xE2\xA0\x80\xE2\xA0\x89\xE2\xA0\x81\xE2\xA0\x9D\xE2\xA0\x80\xE2\xA0\x91\xE2\xA0\x81\xE2\xA0\x9E\xE2\xA0\x80\xE2\xA0\x9B\xE2\xA0"
-        "\x87\xE2\xA0\x81\xE2\xA0\x8E\xE2\xA0\x8E\xE2\xA0\x80\xE2\xA0\x81\xE2\xA0\x9D\xE2\xA0\x99\xE2\xA0\x80\xE2\xA0\x8A\xE2\xA0\x9E\xE2\xA0\x80\xE2"
-        "\xA0\x99\xE2\xA0\x95\xE2\xA0\x91\xE2\xA0\x8E\xE2\xA0\x9D\xE2\xA0\x9E\xE2\xA0\x80\xE2\xA0\x93\xE2\xA0\xA5\xE2\xA0\x97\xE2\xA0\x9E\xE2\xA0\x80"
-        "\xE2\xA0\x8D\xE2\xA0\x91",
-        L"\x280A\x2800\x2809\x2801\x281D\x2800\x2811\x2801\x281E\x2800\x281B\x2807\x2801\x280E\x280E\x2800\x2801\x281D\x2819\x2800\x280A\x281E\x2800"
-        L"\x2819\x2815\x2811\x280E\x281D\x281E\x2800\x2813\x2825\x2817\x281E\x2800\x280D\x2811",
+        {
+            '\xE2', '\xA0', '\x8A', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x89', '\xE2', '\xA0', '\x81', '\xE2', '\xA0', '\x9D', '\xE2', '\xA0', '\x80',
+            '\xE2', '\xA0', '\x91', '\xE2', '\xA0', '\x81', '\xE2', '\xA0', '\x9E', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x9B', '\xE2', '\xA0', '\x87',
+            '\xE2', '\xA0', '\x81', '\xE2', '\xA0', '\x8E', '\xE2', '\xA0', '\x8E', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x81', '\xE2', '\xA0', '\x9D',
+            '\xE2', '\xA0', '\x99', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x8A', '\xE2', '\xA0', '\x9E', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x99',
+            '\xE2', '\xA0', '\x95', '\xE2', '\xA0', '\x91', '\xE2', '\xA0', '\x8E', '\xE2', '\xA0', '\x9D', '\xE2', '\xA0', '\x9E', '\xE2', '\xA0', '\x80',
+            '\xE2', '\xA0', '\x93', '\xE2', '\xA0', '\xA5', '\xE2', '\xA0', '\x97', '\xE2', '\xA0', '\x9E', '\xE2', '\xA0', '\x80', '\xE2', '\xA0', '\x8D',
+            '\xE2', '\xA0', '\x91'
+        },
+        {
+            0x280A, 0x2800, 0x2809, 0x2801, 0x281D, 0x2800, 0x2811, 0x2801, 0x281E, 0x2800, 0x281B, 0x2807, 0x2801, 0x280E, 0x280E, 0x2800, 0x2801, 0x281D,
+            0x2819, 0x2800, 0x280A, 0x281E, 0x2800, 0x2819, 0x2815, 0x2811, 0x280E, 0x281D, 0x281E, 0x2800, 0x2813, 0x2825, 0x2817, 0x281E, 0x2800, 0x280D,
+            0x2811
+        },
         {
             0x0000280A, 0x00002800, 0x00002809, 0x00002801, 0x0000281D, 0x00002800, 0x00002811, 0x00002801, 0x0000281E, 0x00002800, 0x0000281B, 0x00002807,
             0x00002801, 0x0000280E, 0x0000280E, 0x00002800, 0x00002801, 0x0000281D, 0x00002819, 0x00002800, 0x0000280A, 0x0000281E, 0x00002800, 0x00002819,
@@ -217,11 +216,17 @@ unicode_tuple const unicode_test_data[] =
     }, // ⠊⠀⠉⠁⠝⠀⠑⠁⠞⠀⠛⠇⠁⠎⠎⠀⠁⠝⠙⠀⠊⠞⠀⠙⠕⠑⠎⠝⠞⠀⠓⠥⠗⠞⠀⠍⠑
 
     {
-        "\xD8\xA3\xD9\x86\xD8\xA7\x20\xD9\x82\xD8\xA7\xD8\xAF\xD8\xB1\x20\xD8\xB9\xD9\x84\xD9\x89\x20\xD8\xA3\xD9\x83\xD9\x84\x20\xD8\xA7\xD9\x84\xD8"
-        "\xB2\xD8\xAC\xD8\xA7\xD8\xAC\x20\xD9\x88\x20\xD9\x87\xD8\xB0\xD8\xA7\x20\xD9\x84\xD8\xA7\x20\xD9\x8A\xD8\xA4\xD9\x84\xD9\x85\xD9\x86\xD9\x8A"
-        "\x2E",
-        L"\x0623\x0646\x0627\x0020\x0642\x0627\x062F\x0631\x0020\x0639\x0644\x0649\x0020\x0623\x0643\x0644\x0020\x0627\x0644\x0632\x062C\x0627\x062C"
-        L"\x0020\x0648\x0020\x0647\x0630\x0627\x0020\x0644\x0627\x0020\x064A\x0624\x0644\x0645\x0646\x064A\x002E",
+        {
+            '\xD8', '\xA3', '\xD9', '\x86', '\xD8', '\xA7', '\x20', '\xD9', '\x82', '\xD8', '\xA7', '\xD8', '\xAF', '\xD8', '\xB1', '\x20', '\xD8', '\xB9',
+            '\xD9', '\x84', '\xD9', '\x89', '\x20', '\xD8', '\xA3', '\xD9', '\x83', '\xD9', '\x84', '\x20', '\xD8', '\xA7', '\xD9', '\x84', '\xD8', '\xB2',
+            '\xD8', '\xAC', '\xD8', '\xA7', '\xD8', '\xAC', '\x20', '\xD9', '\x88', '\x20', '\xD9', '\x87', '\xD8', '\xB0', '\xD8', '\xA7', '\x20', '\xD9',
+            '\x84', '\xD8', '\xA7', '\x20', '\xD9', '\x8A', '\xD8', '\xA4', '\xD9', '\x84', '\xD9', '\x85', '\xD9', '\x86', '\xD9', '\x8A', '\x2E'
+        },
+        {
+            0x0623, 0x0646, 0x0627, 0x0020, 0x0642, 0x0627, 0x062F, 0x0631, 0x0020, 0x0639, 0x0644, 0x0649, 0x0020, 0x0623, 0x0643, 0x0644, 0x0020, 0x0627,
+            0x0644, 0x0632, 0x062C, 0x0627, 0x062C, 0x0020, 0x0648, 0x0020, 0x0647, 0x0630, 0x0627, 0x0020, 0x0644, 0x0627, 0x0020, 0x064A, 0x0624, 0x0644,
+            0x0645, 0x0646, 0x064A, 0x002E
+        },
         {
             0x00000623, 0x00000646, 0x00000627, 0x00000020, 0x00000642, 0x00000627, 0x0000062F, 0x00000631, 0x00000020, 0x00000639, 0x00000644, 0x00000649,
             0x00000020, 0x00000623, 0x00000643, 0x00000644, 0x00000020, 0x00000627, 0x00000644, 0x00000632, 0x0000062C, 0x00000627, 0x0000062C, 0x00000020,
@@ -231,17 +236,28 @@ unicode_tuple const unicode_test_data[] =
     }, // أنا قادر على أكل الزجاج و هذا لا يؤلمني.
 
     {
-        "\xE1\x80\x80\xE1\x80\xB9\xE1\x80\x9A\xE1\x80\xB9\xE1\x80\x9D\xE1\x80\x94\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\x90\xE1\x80\xB1\xE1\x80\xAC\xE1\x80"
-        "\xB9\xE2\x80\x8C\xE1\x81\x8A\xE1\x80\x80\xE1\x80\xB9\xE1\x80\x9A\xE1\x80\xB9\xE1\x80\x9D\xE1\x80\x94\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\x99\x20"
-        "\xE1\x80\x99\xE1\x80\xB9\xE1\x80\x9A\xE1\x80\x80\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\x85\xE1\x80\xAC\xE1\x80\xB8\xE1\x80\x94\xE1\x80\xAF\xE1\x80"
-        "\xAD\xE1\x80\x84\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\x9E\xE1\x80\x8A\xE1\x80\xB9\xE2\x80\x8C\xE1\x81\x8B\x20\xE1\x81\x8E\xE1\x80\x80\xE1\x80\xB9"
-        "\xE1\x80\x9B\xE1\x80\xB1\xE1\x80\xAC\xE1\x80\x84\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\xB7\x20\xE1\x80\x91\xE1\x80\xAD\xE1\x80\x81\xE1\x80\xAF\xE1"
-        "\x80\xAD\xE1\x80\x80\xE1\x80\xB9\xE2\x80\x8C\xE1\x80\x99\xE1\x80\xB9\xE1\x80\x9F\xE1\x80\xAF\x20\xE1\x80\x99\xE1\x80\x9B\xE1\x80\xB9\xE1\x80"
-        "\x9F\xE1\x80\xAD\xE1\x80\x95\xE1\x80\xAC\xE1\x81\x8B",
-        L"\x1000\x1039\x101A\x1039\x101D\x1014\x1039\x200C\x1010\x1031\x102C\x1039\x200C\x104A\x1000\x1039\x101A\x1039\x101D\x1014\x1039\x200C\x1019"
-        L"\x0020\x1019\x1039\x101A\x1000\x1039\x200C\x1005\x102C\x1038\x1014\x102F\x102D\x1004\x1039\x200C\x101E\x100A\x1039\x200C\x104B\x0020\x104E"
-        L"\x1000\x1039\x101B\x1031\x102C\x1004\x1039\x200C\x1037\x0020\x1011\x102D\x1001\x102F\x102D\x1000\x1039\x200C\x1019\x1039\x101F\x102F\x0020"
-        L"\x1019\x101B\x1039\x101F\x102D\x1015\x102C\x104B",
+        {
+            '\xE1', '\x80', '\x80', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9A', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9D', '\xE1', '\x80', '\x94',
+            '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80', '\x90', '\xE1', '\x80', '\xB1', '\xE1', '\x80', '\xAC', '\xE1', '\x80', '\xB9',
+            '\xE2', '\x80', '\x8C', '\xE1', '\x81', '\x8A', '\xE1', '\x80', '\x80', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9A', '\xE1', '\x80', '\xB9',
+            '\xE1', '\x80', '\x9D', '\xE1', '\x80', '\x94', '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80', '\x99', '\x20', '\xE1', '\x80',
+            '\x99', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9A', '\xE1', '\x80', '\x80', '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80',
+            '\x85', '\xE1', '\x80', '\xAC', '\xE1', '\x80', '\xB8', '\xE1', '\x80', '\x94', '\xE1', '\x80', '\xAF', '\xE1', '\x80', '\xAD', '\xE1', '\x80',
+            '\x84', '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80', '\x9E', '\xE1', '\x80', '\x8A', '\xE1', '\x80', '\xB9', '\xE2', '\x80',
+            '\x8C', '\xE1', '\x81', '\x8B', '\x20', '\xE1', '\x81', '\x8E', '\xE1', '\x80', '\x80', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9B', '\xE1',
+            '\x80', '\xB1', '\xE1', '\x80', '\xAC', '\xE1', '\x80', '\x84', '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80', '\xB7', '\x20',
+            '\xE1', '\x80', '\x91', '\xE1', '\x80', '\xAD', '\xE1', '\x80', '\x81', '\xE1', '\x80', '\xAF', '\xE1', '\x80', '\xAD', '\xE1', '\x80', '\x80',
+            '\xE1', '\x80', '\xB9', '\xE2', '\x80', '\x8C', '\xE1', '\x80', '\x99', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9F', '\xE1', '\x80', '\xAF',
+            '\x20', '\xE1', '\x80', '\x99', '\xE1', '\x80', '\x9B', '\xE1', '\x80', '\xB9', '\xE1', '\x80', '\x9F', '\xE1', '\x80', '\xAD', '\xE1', '\x80',
+            '\x95', '\xE1', '\x80', '\xAC', '\xE1', '\x81', '\x8B'
+        },
+        {
+            0x1000, 0x1039, 0x101A, 0x1039, 0x101D, 0x1014, 0x1039, 0x200C, 0x1010, 0x1031, 0x102C, 0x1039, 0x200C, 0x104A, 0x1000, 0x1039, 0x101A, 0x1039,
+            0x101D, 0x1014, 0x1039, 0x200C, 0x1019, 0x0020, 0x1019, 0x1039, 0x101A, 0x1000, 0x1039, 0x200C, 0x1005, 0x102C, 0x1038, 0x1014, 0x102F, 0x102D,
+            0x1004, 0x1039, 0x200C, 0x101E, 0x100A, 0x1039, 0x200C, 0x104B, 0x0020, 0x104E, 0x1000, 0x1039, 0x101B, 0x1031, 0x102C, 0x1004, 0x1039, 0x200C,
+            0x1037, 0x0020, 0x1011, 0x102D, 0x1001, 0x102F, 0x102D, 0x1000, 0x1039, 0x200C, 0x1019, 0x1039, 0x101F, 0x102F, 0x0020, 0x1019, 0x101B, 0x1039,
+            0x101F, 0x102D, 0x1015, 0x102C, 0x104B
+        },
         {
             0x00001000, 0x00001039, 0x0000101A, 0x00001039, 0x0000101D, 0x00001014, 0x00001039, 0x0000200C, 0x00001010, 0x00001031, 0x0000102C, 0x00001039,
             0x0000200C, 0x0000104A, 0x00001000, 0x00001039, 0x0000101A, 0x00001039, 0x0000101D, 0x00001014, 0x00001039, 0x0000200C, 0x00001019, 0x00000020,
@@ -254,26 +270,40 @@ unicode_tuple const unicode_test_data[] =
     }, // က္ယ္ဝန္‌တော္‌၊က္ယ္ဝန္‌မ မ္ယက္‌စားနုိင္‌သည္‌။ ၎က္ရောင္‌့ ထိခုိက္‌မ္ဟု မရ္ဟိပာ။
 
     {
-        "\xF0\x9F\xA0\x80\xF0\x9F\xA0\x81\xF0\x9F\xA0\x82\xF0\x9F\xA0\x83\xF0\x9F\xA0\x84\xF0\x9F\xA0\x85\xF0\x9F\xA0\x86\xF0\x9F\xA0\x87\xF0\x9F\xA0"
-        "\x88\xF0\x9F\xA0\x89\xF0\x9F\xA0\x8A\xF0\x9F\xA0\x8B",
-        L"\xD83E\xDC00\xD83E\xDC01\xD83E\xDC02\xD83E\xDC03\xD83E\xDC04\xD83E\xDC05\xD83E\xDC06\xD83E\xDC07\xD83E\xDC08\xD83E\xDC09\xD83E\xDC0A\xD83E"
-        L"\xDC0B",
+        {
+            '\xF0', '\x9F', '\xA0', '\x80', '\xF0', '\x9F', '\xA0', '\x81', '\xF0', '\x9F', '\xA0', '\x82', '\xF0', '\x9F', '\xA0', '\x83', '\xF0', '\x9F',
+            '\xA0', '\x84', '\xF0', '\x9F', '\xA0', '\x85', '\xF0', '\x9F', '\xA0', '\x86', '\xF0', '\x9F', '\xA0', '\x87', '\xF0', '\x9F', '\xA0', '\x88',
+            '\xF0', '\x9F', '\xA0', '\x89', '\xF0', '\x9F', '\xA0', '\x8A', '\xF0', '\x9F', '\xA0', '\x8B'
+        },
+        {
+            0xD83E, 0xDC00, 0xD83E, 0xDC01, 0xD83E, 0xDC02, 0xD83E, 0xDC03, 0xD83E, 0xDC04, 0xD83E, 0xDC05, 0xD83E, 0xDC06, 0xD83E, 0xDC07, 0xD83E, 0xDC08,
+            0xD83E, 0xDC09, 0xD83E, 0xDC0A, 0xD83E, 0xDC0B
+        },
         {
             0x0001F800, 0x0001F801, 0x0001F802, 0x0001F803, 0x0001F804, 0x0001F805, 0x0001F806, 0x0001F807, 0x0001F808, 0x0001F809, 0x0001F80A, 0x0001F80B
         }
     }, // 🠀🠁🠂🠃🠄🠅🠆🠇🠈🠉🠊🠋
 
     {
-        "\xF0\x9F\x80\x80\xF0\x9F\x80\x81\xF0\x9F\x80\x82\xF0\x9F\x80\x83\xF0\x9F\x80\x84\xF0\x9F\x80\x85\xF0\x9F\x80\x86\xF0\x9F\x80\x87\xF0\x9F\x80"
-        "\x88\xF0\x9F\x80\x89\xF0\x9F\x80\x8A\xF0\x9F\x80\x8B\xF0\x9F\x80\x8C\xF0\x9F\x80\x8D\xF0\x9F\x80\x8E\xF0\x9F\x80\x8F\xF0\x9F\x80\x90\xF0\x9F"
-        "\x80\x91\xF0\x9F\x80\x92\xF0\x9F\x80\x93\xF0\x9F\x80\x94\xF0\x9F\x80\x95\xF0\x9F\x80\x96\xF0\x9F\x80\x97\xF0\x9F\x80\x98\xF0\x9F\x80\x99\xF0"
-        "\x9F\x80\x9A\xF0\x9F\x80\x9B\xF0\x9F\x80\x9C\xF0\x9F\x80\x9D\xF0\x9F\x80\x9E\xF0\x9F\x80\x9F\xF0\x9F\x80\xA0\xF0\x9F\x80\xA1\xF0\x9F\x80\xA2"
-        "\xF0\x9F\x80\xA3\xF0\x9F\x80\xA4\xF0\x9F\x80\xA5\xF0\x9F\x80\xA6\xF0\x9F\x80\xA7\xF0\x9F\x80\xA8\xF0\x9F\x80\xA9\xF0\x9F\x80\xAA\xF0\x9F\x80"
-        "\xAB",
-        L"\xD83C\xDC00\xD83C\xDC01\xD83C\xDC02\xD83C\xDC03\xD83C\xDC04\xD83C\xDC05\xD83C\xDC06\xD83C\xDC07\xD83C\xDC08\xD83C\xDC09\xD83C\xDC0A\xD83C"
-        L"\xDC0B\xD83C\xDC0C\xD83C\xDC0D\xD83C\xDC0E\xD83C\xDC0F\xD83C\xDC10\xD83C\xDC11\xD83C\xDC12\xD83C\xDC13\xD83C\xDC14\xD83C\xDC15\xD83C\xDC16"
-        L"\xD83C\xDC17\xD83C\xDC18\xD83C\xDC19\xD83C\xDC1A\xD83C\xDC1B\xD83C\xDC1C\xD83C\xDC1D\xD83C\xDC1E\xD83C\xDC1F\xD83C\xDC20\xD83C\xDC21\xD83C"
-        L"\xDC22\xD83C\xDC23\xD83C\xDC24\xD83C\xDC25\xD83C\xDC26\xD83C\xDC27\xD83C\xDC28\xD83C\xDC29\xD83C\xDC2A\xD83C\xDC2B",
+        {
+            '\xF0', '\x9F', '\x80', '\x80', '\xF0', '\x9F', '\x80', '\x81', '\xF0', '\x9F', '\x80', '\x82', '\xF0', '\x9F', '\x80', '\x83', '\xF0', '\x9F',
+            '\x80', '\x84', '\xF0', '\x9F', '\x80', '\x85', '\xF0', '\x9F', '\x80', '\x86', '\xF0', '\x9F', '\x80', '\x87', '\xF0', '\x9F', '\x80', '\x88',
+            '\xF0', '\x9F', '\x80', '\x89', '\xF0', '\x9F', '\x80', '\x8A', '\xF0', '\x9F', '\x80', '\x8B', '\xF0', '\x9F', '\x80', '\x8C', '\xF0', '\x9F',
+            '\x80', '\x8D', '\xF0', '\x9F', '\x80', '\x8E', '\xF0', '\x9F', '\x80', '\x8F', '\xF0', '\x9F', '\x80', '\x90', '\xF0', '\x9F', '\x80', '\x91',
+            '\xF0', '\x9F', '\x80', '\x92', '\xF0', '\x9F', '\x80', '\x93', '\xF0', '\x9F', '\x80', '\x94', '\xF0', '\x9F', '\x80', '\x95', '\xF0', '\x9F',
+            '\x80', '\x96', '\xF0', '\x9F', '\x80', '\x97', '\xF0', '\x9F', '\x80', '\x98', '\xF0', '\x9F', '\x80', '\x99', '\xF0', '\x9F', '\x80', '\x9A',
+            '\xF0', '\x9F', '\x80', '\x9B', '\xF0', '\x9F', '\x80', '\x9C', '\xF0', '\x9F', '\x80', '\x9D', '\xF0', '\x9F', '\x80', '\x9E', '\xF0', '\x9F',
+            '\x80', '\x9F', '\xF0', '\x9F', '\x80', '\xA0', '\xF0', '\x9F', '\x80', '\xA1', '\xF0', '\x9F', '\x80', '\xA2', '\xF0', '\x9F', '\x80', '\xA3',
+            '\xF0', '\x9F', '\x80', '\xA4', '\xF0', '\x9F', '\x80', '\xA5', '\xF0', '\x9F', '\x80', '\xA6', '\xF0', '\x9F', '\x80', '\xA7', '\xF0', '\x9F',
+            '\x80', '\xA8', '\xF0', '\x9F', '\x80', '\xA9', '\xF0', '\x9F', '\x80', '\xAA', '\xF0', '\x9F', '\x80', '\xAB'
+        },
+        {
+            0xD83C, 0xDC00, 0xD83C, 0xDC01, 0xD83C, 0xDC02, 0xD83C, 0xDC03, 0xD83C, 0xDC04, 0xD83C, 0xDC05, 0xD83C, 0xDC06, 0xD83C, 0xDC07, 0xD83C, 0xDC08,
+            0xD83C, 0xDC09, 0xD83C, 0xDC0A, 0xD83C, 0xDC0B, 0xD83C, 0xDC0C, 0xD83C, 0xDC0D, 0xD83C, 0xDC0E, 0xD83C, 0xDC0F, 0xD83C, 0xDC10, 0xD83C, 0xDC11,
+            0xD83C, 0xDC12, 0xD83C, 0xDC13, 0xD83C, 0xDC14, 0xD83C, 0xDC15, 0xD83C, 0xDC16, 0xD83C, 0xDC17, 0xD83C, 0xDC18, 0xD83C, 0xDC19, 0xD83C, 0xDC1A,
+            0xD83C, 0xDC1B, 0xD83C, 0xDC1C, 0xD83C, 0xDC1D, 0xD83C, 0xDC1E, 0xD83C, 0xDC1F, 0xD83C, 0xDC20, 0xD83C, 0xDC21, 0xD83C, 0xDC22, 0xD83C, 0xDC23,
+            0xD83C, 0xDC24, 0xD83C, 0xDC25, 0xD83C, 0xDC26, 0xD83C, 0xDC27, 0xD83C, 0xDC28, 0xD83C, 0xDC29, 0xD83C, 0xDC2A, 0xD83C, 0xDC2B
+        },
         {
             0x0001F000, 0x0001F001, 0x0001F002, 0x0001F003, 0x0001F004, 0x0001F005, 0x0001F006, 0x0001F007, 0x0001F008, 0x0001F009, 0x0001F00A, 0x0001F00B,
             0x0001F00C, 0x0001F00D, 0x0001F00E, 0x0001F00F, 0x0001F010, 0x0001F011, 0x0001F012, 0x0001F013, 0x0001F014, 0x0001F015, 0x0001F016, 0x0001F017,
@@ -283,175 +313,140 @@ unicode_tuple const unicode_test_data[] =
     }, // 🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡🀢🀣🀤🀥🀦🀧🀨🀩🀪🀫
 
     {
-        "\xED\x9F\xBF",
-        L"\xD7FF",
-        {
-            utf::min_surrogate - 1
-        }
+        { '\xED', '\x9F', '\xBF' },
+        { 0xD7FF },
+        { utf::min_surrogate - 1 }
     },
 
     {
-        "\xEE\x80\x80",
-        L"\xE000",
-        {    
-            utf::max_surrogate + 1
-        }
+        { '\xEE', '\x80', '\x80' },
+        { 0xE000 },
+        { utf::max_surrogate + 1 }
     },
 
     {
-        "\xF0\x90\x80\x80",
-        L"\xD800\xDC00",
-        {
-            0x00010000
-        }
+        { '\xF0', '\x90', '\x80', '\x80' },
+        { 0xD800, 0xDC00 },
+        { 0x00010000 }
     },
 
     {
-        "\xF4\x8F\xBF\xBF",
-        L"\xDBFF\xDFFF",
-        {
-            utf::max_unicode_code_point
-        }
+        { '\xF4', '\x8F', '\xBF', '\xBF' },
+        { 0xDBFF, 0xDFFF },
+        { utf::max_unicode_code_point }
     },
 };
 
 supported_tuple const supported_test_data[] =
 {
     {
-        "\xFA\x95\xA9\xB6\x83",
-        {
-            0x02569D83
-        }
+        { '\xFA', '\x95', '\xA9', '\xB6', '\x83' },
+        { 0x02569D83 }
     },
 
     {
-        "\xFD\x95\xA9\xB6\x83\xAC",
-        {
-            0x55A760EC
-        }
+        { '\xFD', '\x95', '\xA9', '\xB6', '\x83', '\xAC' },
+        { 0x55A760EC }
     },
 };
 
 }
 
+
 BOOST_DATA_TEST_CASE(conv_utf8_to_utf16, boost::make_iterator_range(unicode_test_data), tuple)
 {
-    std::wstring res;
-    auto const it = tuple.utf8.c_str();
-    auto const eit = utf::convz<utf::utf8, utf::utf16>(it, std::back_inserter(res)) - 1;
-    std::wstring res2;
+    std::u16string res;
+    utf::convz<utf::utf8, utf::utf16>(tuple.utf8.data(), std::back_inserter(res));
+    std::u16string res2;
     utf::conv<utf::utf8, utf::utf16>(tuple.utf8.cbegin(), tuple.utf8.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf16 == res &&
         tuple.utf16 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::string(it, eit) == tuple.utf8;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf8_to_utf32, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::u32string res;
-    auto const it = tuple.utf8.c_str();
-    auto const eit = utf::convz<utf::utf8, utf::utf32>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf8, utf::utf32>(tuple.utf8.data(), std::back_inserter(res));
     std::u32string res2;
     utf::conv<utf::utf8, utf::utf32>(tuple.utf8.cbegin(), tuple.utf8.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf32 == res &&
         tuple.utf32 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::string(it, eit) == tuple.utf8;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf16_to_utf8, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::string res;
-    auto const it = tuple.utf16.c_str();
-    auto const eit = utf::convz<utf::utf16, utf::utf8>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf16, utf::utf8>(tuple.utf16.data(), std::back_inserter(res));
     std::string res2;
     utf::conv<utf::utf16, utf::utf8>(tuple.utf16.cbegin(), tuple.utf16.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf8 == res &&
         tuple.utf8 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::wstring(it, eit) == tuple.utf16;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::u32string res;
-    auto const it = tuple.utf16.c_str();
-    auto const eit = utf::convz<utf::utf16, utf::utf32>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf16, utf::utf32>(tuple.utf16.data(), std::back_inserter(res));
     std::u32string res2;
     utf::conv<utf::utf16, utf::utf32>(tuple.utf16.cbegin(), tuple.utf16.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf32 == res &&
         tuple.utf32 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::wstring(it, eit) == tuple.utf16;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf32_to_utf8, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::string res;
-    auto const it = tuple.utf32.c_str();
-    auto const eit = utf::convz<utf::utf32, utf::utf8>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf32, utf::utf8>(tuple.utf32.data(), std::back_inserter(res));
     std::string res2;
     utf::conv<utf::utf32, utf::utf8>(tuple.utf32.cbegin(), tuple.utf32.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf8 == res &&
         tuple.utf8 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::u32string(it, eit) == tuple.utf32;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(unicode_test_data), tuple)
 {
-    std::wstring res;
-    auto const it = tuple.utf32.c_str();
-    auto const eit = utf::convz<utf::utf32, utf::utf16>(it, std::back_inserter(res)) - 1;
-    std::wstring res2;
+    std::u16string res;
+    utf::convz<utf::utf32, utf::utf16>(tuple.utf32.data(), std::back_inserter(res));
+    std::u16string res2;
     utf::conv<utf::utf32, utf::utf16>(tuple.utf32.cbegin(), tuple.utf32.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf16 == res &&
         tuple.utf16 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::u32string(it, eit) == tuple.utf32;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_supported, boost::make_iterator_range(supported_test_data), tuple)
 {
     std::string res;
-    auto const it = tuple.utf32.c_str();
-    auto const eit = utf::convz<utf::utf32, utf::utf8>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf32, utf::utf8>(tuple.utf32.data(), std::back_inserter(res));
     std::string res2;
     utf::conv<utf::utf32, utf::utf8>(tuple.utf32.cbegin(), tuple.utf32.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf8 == res &&
         tuple.utf8 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::u32string(it, eit) == tuple.utf32;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_supported, boost::make_iterator_range(supported_test_data), tuple)
 {
     std::u32string res;
-    auto const it = tuple.utf8.c_str();
-    auto const eit = utf::convz<utf::utf8, utf::utf32>(it, std::back_inserter(res)) - 1;
+    utf::convz<utf::utf8, utf::utf32>(tuple.utf8.data(), std::back_inserter(res));
     std::u32string res2;
     utf::conv<utf::utf8, utf::utf32>(tuple.utf8.cbegin(), tuple.utf8.cend(), std::back_inserter(res2));
     auto const success =
         tuple.utf32 == res &&
         tuple.utf32 == res2;
     BOOST_TEST_REQUIRE(success);
-    auto const success2 = std::string(it, eit) == tuple.utf8;
-    BOOST_TEST_REQUIRE(success2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(unicode_test_data), tuple)
@@ -474,14 +469,14 @@ BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(unicode_test_data), t
 BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(unicode_test_data), tuple)
 {
     static auto const max_symbol_size = utf::utf16::max_unicode_symbol_size;
-    std::wstring res;
+    std::u16string res;
     for (auto str = tuple.utf16.c_str(); *str;)
     {
         auto const size = utf::size<utf::utf16>(str);
         BOOST_TEST_REQUIRE(!!size);
         BOOST_TEST_REQUIRE(size <= max_symbol_size);
         auto const end_str = str + size;
-        res += std::wstring(str, end_str);
+        res += std::u16string(str, end_str);
         str = end_str;
         
     }
@@ -560,6 +555,8 @@ inline uint64_t get_time() throw()
 
 #elif defined(__GNUC__) || defined(__clang__)
 
+    uint32_t lo, hi;
+
 #ifdef __i386__
     #define DIRTY "%ebx", "%ecx"
 #elif __x86_64__
@@ -568,16 +565,16 @@ inline uint64_t get_time() throw()
     #error Unknown platform
 #endif
 
-    uint32_t lo, hi;
     asm volatile(
         "cpuid\n\t"
         "rdtsc\n\t"
         : "=a"(lo), "=d"(hi)
         : "a"(0)
         : DIRTY);
-    return static_cast<uint64_t>(hi) << 32 | lo;
 
 #undef DIRTY
+
+    return static_cast<uint64_t>(hi) << 32 | lo;
 
 #else
 #error get_time() is not implmeneted for this architecture
@@ -635,7 +632,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
     static size_t const iterations = 16;
 
     std::vector<char> utf8_buf;
-    std::vector<wchar_t> utf16_buf;
+    std::vector<char16_t> utf16_buf;
     std::vector<char32_t> utf32_buf;
 
     utf8_buf.reserve(utf8_max_size);
@@ -750,14 +747,21 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
         std::cout << (boost::format("UTF8  ==> UTF32: %fs") % duration).str() << std::endl;
     }
 
-    std::cout << "codecvt_utf8_utf16<wchar_t>:" << std::endl;
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t
+#if _MSC_VER >= 1900
+// Bug: MSVC 2017 linker: error LNK2001: unresolved external symbol "__declspec(dllimport) public: static class std::locale::id std::codecvt<char16_t,char,struct _Mbstatet>::id" (__imp_?id@?$codecvt@_SDU_Mbstatet@@@std@@2V0locale@2@A)
+using char16_type = int16_t;
+#else
+using char16_type = char16_t;
+#endif
+
+    std::cout << "codecvt_utf8_utf16<char16_t>:" << std::endl;
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_type
 #if defined(__GNUC__)
         // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
         , ww898::utf::max_unicode_code_point
         , std::little_endian
 #endif
-        >> conv;
+        >, char16_type> cvt;
 
     {
         std::string res;
@@ -767,7 +771,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
         {
             res.clear();
             auto const beg_time = get_time();
-            res = conv.to_bytes(&utf16_buf.front(), &utf16_buf.back() + 1);
+            res = cvt.to_bytes(reinterpret_cast<char16_type const *>(&utf16_buf.front()), reinterpret_cast<char16_type const *>(&utf16_buf.back()) + 1);
             auto const end_time = get_time();
             sum_duration += end_time - beg_time;
         }
@@ -779,19 +783,19 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
     }
 
     {
-        std::wstring res;
+        std::basic_string<char16_type> res;
         res.reserve(utf16_max_size);
         uint64_t sum_duration = 0;
         for (auto n = iterations; n-- > 0;)
         {
             res.clear();
             auto const beg_time = get_time();
-            res = conv.from_bytes(&utf8_buf.front(), &utf8_buf.back() + 1);
+            res = cvt.from_bytes(&utf8_buf.front(), &utf8_buf.back() + 1);
             auto const end_time = get_time();
             sum_duration += end_time - beg_time;
         }
         BOOST_TEST_REQUIRE(res.size() == utf16_buf.size());
-        auto const same = memcmp(&utf16_buf.front(), &res.front(), sizeof(wchar_t) * utf16_buf.size()) == 0;
+        auto const same = memcmp(&utf16_buf.front(), &res.front(), sizeof(char16_t) * utf16_buf.size()) == 0;
         BOOST_TEST_REQUIRE(same);
         auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
         std::cout << (boost::format("UTF8  ==> UTF16: %fs (%+.2f%%)") % duration % (100 * (duration / utf8_utf16_duration - 1))).str() << std::endl;

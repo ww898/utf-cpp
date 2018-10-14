@@ -1,7 +1,7 @@
 ﻿/*
  * MIT License
  * 
- * Copyright (c) 2017 Mikhail Pilin
+ * Copyright (c) 2017-2018 Mikhail Pilin
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -296,13 +296,13 @@ template<
     typename Outf,
     typename It,
     typename Oit>
-It convz(It it, Oit oit)
+Oit convz(It it, Oit oit)
 {
     while (true)
     {
         auto const cp = Utf::read(it, [] {});
         if (!cp)
-            return it;
+            return oit;
         Outf::write(cp, oit);
     }
 }
