@@ -42,6 +42,7 @@
 
 #include <iostream>
 #include <codecvt>
+#include <forward_list>
 
 #if defined(__linux__)
 #include <chrono>
@@ -59,6 +60,7 @@ struct unicode_tuple final
     std::string utf8;
     std::u16string utf16;
     std::u32string utf32;
+    std::wstring utfw;
 };
 
 struct supported_tuple final
@@ -72,56 +74,65 @@ unicode_tuple const unicode_test_data[] =
     {
         { '\x24' },
         { 0x0024 },
-        { 0x00000024 }
-    }, // $
+        { 0x00000024 },
+        L"$"
+    },
 
     {
         { '\xC2', '\xA2' },
         { 0x00A2 },
-        { 0x000000A2 }
-    }, // ¢
+        { 0x000000A2 },
+        L"¢"
+    },
 
     {
         { '\xE2', '\x82', '\xAC' },
         { 0x20AC },
-        { 0x000020AC }
-    }, // €
+        { 0x000020AC },
+        L"€"
+    },
 
     {
         { '\xF0', '\x90', '\x8D', '\x88' },
         { 0xD800, 0xDF48 },
-        { 0x00010348 }
-    }, // 𐍈
+        { 0x00010348 },
+        L"𐍈"
+    },
 
     {
         { '\xF0', '\xA4', '\xAD', '\xA2' },
         { 0xD852, 0xDF62 },
-        { 0x00024B62 }
-    }, // 𤭢
+        { 0x00024B62 },
+        L"𤭢"
+    },
 
     {
         { '\xF0', '\x90', '\x90', '\xB7' },
         { 0xD801, 0xDC37 },
-        { 0x00010437 }
-    }, // 𐐷
+        { 0x00010437 },
+        L"𐐷"
+    },
 
     {
         { '\xEF', '\xAB', '\x82' },
         { 0xFAC2 },
-        { 0x0000FAC2 }
-    }, // 輸
+        { 0x0000FAC2 },
+        L"輸"
+    },
 
     {
         { '\xD0', '\xAE', '\xD0', '\xBD', '\xD0', '\xB8', '\xD0', '\xBA', '\xD0', '\xBE', '\xD0', '\xB4' },
         { 0x042E, 0x043D, 0x0438, 0x043A, 0x043E, 0x0434 },
-        { 0x0000042E, 0x0000043D, 0x00000438, 0x0000043A, 0x0000043E, 0x00000434 }
-    }, // Юникод
+        { 0x0000042E, 0x0000043D, 0x00000438, 0x0000043A, 0x0000043E, 0x00000434 },
+        L"Юникод"
+    },
 
     {
         { '\xC5', '\xAA', '\x6E', '\xC4', '\xAD', '\x63', '\xC5', '\x8D', '\x64', '\x65', '\xCC', '\xBD' },
         { 0x016A, 0x006E, 0x012D, 0x0063, 0x014D, 0x0064, 0x0065, 0x033D },
-        { 0x0000016A, 0x0000006E, 0x0000012D, 0x00000063, 0x0000014D, 0x00000064, 0x00000065, 0x0000033D }
-    }, // Ūnĭcōde̽
+        { 0x0000016A, 0x0000006E, 0x0000012D, 0x00000063, 0x0000014D, 0x00000064, 0x00000065, 0x0000033D },
+        L"Ūnĭcōde̽"
+    },
 
     {
         {
@@ -129,26 +140,30 @@ unicode_tuple const unicode_test_data[] =
             '\xE0', '\xA4', '\xA1'
         },
         { 0x092F, 0x0942, 0x0928, 0x093F, 0x0915, 0x094B, 0x0921 },
-        { 0x0000092F, 0x00000942, 0x00000928, 0x0000093F, 0x00000915, 0x0000094B, 0x00000921 }
-    }, // यूनिकोड
+        { 0x0000092F, 0x00000942, 0x00000928, 0x0000093F, 0x00000915, 0x0000094B, 0x00000921 },
+        L"यूनिकोड"
+    },
 
     {
         { '\x41', '\xE2', '\x89', '\xA2', '\xCE', '\x91', '\x2E' },
         { 0x0041, 0x2262, 0x0391, 0x002E },
-        { 0x00000041, 0x00002262, 0x00000391, 0x0000002E }
-    }, // A≢Α.
+        { 0x00000041, 0x00002262, 0x00000391, 0x0000002E },
+        L"A≢Α."
+    },
 
     {
         { '\xED', '\x95', '\x9C', '\xEA', '\xB5', '\xAD', '\xEC', '\x96', '\xB4' },
         { 0xD55C, 0xAD6D, 0xC5B4 },
-        { 0x0000D55C, 0x0000AD6D, 0x0000C5B4 }
-    }, // 한국어
+        { 0x0000D55C, 0x0000AD6D, 0x0000C5B4 },
+        L"한국어"
+    },
 
     {
         { '\xE6', '\x97', '\xA5', '\xE6', '\x9C', '\xAC', '\xE8', '\xAA', '\x9E' },
         { 0x65E5, 0x672C, 0x8A9E },
-        { 0x000065E5, 0x0000672C, 0x00008A9E }
-    }, // 日本語
+        { 0x000065E5, 0x0000672C, 0x00008A9E },
+        L"日本語"
+    },
 
     {
         {
@@ -170,8 +185,9 @@ unicode_tuple const unicode_test_data[] =
             0x000016D6, 0x000016A9, 0x000016CF, 0x000016AA, 0x000016BE, 0x000016EB, 0x000016A9, 0x000016BE, 0x000016DE, 0x000016EB, 0x000016BB, 0x000016C1,
             0x000016CF, 0x000016EB, 0x000016BE, 0x000016D6, 0x000016EB, 0x000016BB, 0x000016D6, 0x000016AA, 0x000016B1, 0x000016D7, 0x000016C1, 0x000016AA,
             0x000016A7, 0x000016EB, 0x000016D7, 0x000016D6, 0x000016EC
-        }
-    }, // ᛁᚳ᛫ᛗᚨᚷ᛫ᚷᛚᚨᛋ᛫ᛖᚩᛏᚪᚾ᛫ᚩᚾᛞ᛫ᚻᛁᛏ᛫ᚾᛖ᛫ᚻᛖᚪᚱᛗᛁᚪᚧ᛫ᛗᛖ᛬
+        },
+        L"ᛁᚳ᛫ᛗᚨᚷ᛫ᚷᛚᚨᛋ᛫ᛖᚩᛏᚪᚾ᛫ᚩᚾᛞ᛫ᚻᛁᛏ᛫ᚾᛖ᛫ᚻᛖᚪᚱᛗᛁᚪᚧ᛫ᛗᛖ᛬"
+    },
 
     {
         {
@@ -189,8 +205,9 @@ unicode_tuple const unicode_test_data[] =
             0x0000169B, 0x0000169B, 0x00001689, 0x00001691, 0x00001685, 0x00001694, 0x00001689, 0x00001689, 0x00001694, 0x0000168B, 0x00001680, 0x00001694,
             0x00001688, 0x00001694, 0x00001680, 0x0000168D, 0x00001682, 0x00001690, 0x00001685, 0x00001691, 0x00001680, 0x00001685, 0x00001694, 0x0000168B,
             0x0000168C, 0x00001693, 0x00001685, 0x00001690, 0x0000169C
-        }
-    }, // ᚛᚛ᚉᚑᚅᚔᚉᚉᚔᚋ ᚔᚈᚔ ᚍᚂᚐᚅᚑ ᚅᚔᚋᚌᚓᚅᚐ᚜
+        },
+        L"᚛᚛ᚉᚑᚅᚔᚉᚉᚔᚋ ᚔᚈᚔ ᚍᚂᚐᚅᚑ ᚅᚔᚋᚌᚓᚅᚐ᚜"
+    },
 
     {
         {
@@ -212,8 +229,9 @@ unicode_tuple const unicode_test_data[] =
             0x00002801, 0x0000280E, 0x0000280E, 0x00002800, 0x00002801, 0x0000281D, 0x00002819, 0x00002800, 0x0000280A, 0x0000281E, 0x00002800, 0x00002819,
             0x00002815, 0x00002811, 0x0000280E, 0x0000281D, 0x0000281E, 0x00002800, 0x00002813, 0x00002825, 0x00002817, 0x0000281E, 0x00002800, 0x0000280D,
             0x00002811
-        }
-    }, // ⠊⠀⠉⠁⠝⠀⠑⠁⠞⠀⠛⠇⠁⠎⠎⠀⠁⠝⠙⠀⠊⠞⠀⠙⠕⠑⠎⠝⠞⠀⠓⠥⠗⠞⠀⠍⠑
+        },
+        L"⠊⠀⠉⠁⠝⠀⠑⠁⠞⠀⠛⠇⠁⠎⠎⠀⠁⠝⠙⠀⠊⠞⠀⠙⠕⠑⠎⠝⠞⠀⠓⠥⠗⠞⠀⠍⠑"
+    },
 
     {
         {
@@ -232,8 +250,9 @@ unicode_tuple const unicode_test_data[] =
             0x00000020, 0x00000623, 0x00000643, 0x00000644, 0x00000020, 0x00000627, 0x00000644, 0x00000632, 0x0000062C, 0x00000627, 0x0000062C, 0x00000020,
             0x00000648, 0x00000020, 0x00000647, 0x00000630, 0x00000627, 0x00000020, 0x00000644, 0x00000627, 0x00000020, 0x0000064A, 0x00000624, 0x00000644,
             0x00000645, 0x00000646, 0x0000064A, 0x0000002E
-        }
-    }, // أنا قادر على أكل الزجاج و هذا لا يؤلمني.
+        },
+        L"أنا قادر على أكل الزجاج و هذا لا يؤلمني."
+    },
 
     {
         {
@@ -266,8 +285,9 @@ unicode_tuple const unicode_test_data[] =
             0x0000101B, 0x00001031, 0x0000102C, 0x00001004, 0x00001039, 0x0000200C, 0x00001037, 0x00000020, 0x00001011, 0x0000102D, 0x00001001, 0x0000102F,
             0x0000102D, 0x00001000, 0x00001039, 0x0000200C, 0x00001019, 0x00001039, 0x0000101F, 0x0000102F, 0x00000020, 0x00001019, 0x0000101B, 0x00001039,
             0x0000101F, 0x0000102D, 0x00001015, 0x0000102C, 0x0000104B
-        }
-    }, // က္ယ္ဝန္‌တော္‌၊က္ယ္ဝန္‌မ မ္ယက္‌စားနုိင္‌သည္‌။ ၎က္ရောင္‌့ ထိခုိက္‌မ္ဟု မရ္ဟိပာ။
+        },
+        L"က္ယ္ဝန္‌တော္‌၊က္ယ္ဝန္‌မ မ္ယက္‌စားနုိင္‌သည္‌။ ၎က္ရောင္‌့ ထိခုိက္‌မ္ဟု မရ္ဟိပာ။"
+    },
 
     {
         {
@@ -281,8 +301,9 @@ unicode_tuple const unicode_test_data[] =
         },
         {
             0x0001F800, 0x0001F801, 0x0001F802, 0x0001F803, 0x0001F804, 0x0001F805, 0x0001F806, 0x0001F807, 0x0001F808, 0x0001F809, 0x0001F80A, 0x0001F80B
-        }
-    }, // 🠀🠁🠂🠃🠄🠅🠆🠇🠈🠉🠊🠋
+        },
+        L"🠀🠁🠂🠃🠄🠅🠆🠇🠈🠉🠊🠋"
+    },
 
     {
         {
@@ -309,31 +330,36 @@ unicode_tuple const unicode_test_data[] =
             0x0001F00C, 0x0001F00D, 0x0001F00E, 0x0001F00F, 0x0001F010, 0x0001F011, 0x0001F012, 0x0001F013, 0x0001F014, 0x0001F015, 0x0001F016, 0x0001F017,
             0x0001F018, 0x0001F019, 0x0001F01A, 0x0001F01B, 0x0001F01C, 0x0001F01D, 0x0001F01E, 0x0001F01F, 0x0001F020, 0x0001F021, 0x0001F022, 0x0001F023,
             0x0001F024, 0x0001F025, 0x0001F026, 0x0001F027, 0x0001F028, 0x0001F029, 0x0001F02A, 0x0001F02B
-        }
-    }, // 🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡🀢🀣🀤🀥🀦🀧🀨🀩🀪🀫
+        },
+        L"🀀🀁🀂🀃🀄🀅🀆🀇🀈🀉🀊🀋🀌🀍🀎🀏🀐🀑🀒🀓🀔🀕🀖🀗🀘🀙🀚🀛🀜🀝🀞🀟🀠🀡🀢🀣🀤🀥🀦🀧🀨🀩🀪🀫"
+    },
 
     {
         { '\xED', '\x9F', '\xBF' },
         { 0xD7FF },
-        { utf::min_surrogate - 1 }
+        { utf::min_surrogate - 1 },
+        L"\U0000D7FF"
     },
 
     {
         { '\xEE', '\x80', '\x80' },
         { 0xE000 },
-        { utf::max_surrogate + 1 }
+        { utf::max_surrogate + 1 },
+        L"\U0000E000"
     },
 
     {
         { '\xF0', '\x90', '\x80', '\x80' },
         { 0xD800, 0xDC00 },
-        { 0x00010000 }
+        { 0x00010000 },
+        L"\U00010000"
     },
 
     {
         { '\xF4', '\x8F', '\xBF', '\xBF' },
         { 0xDBFF, 0xDFFF },
-        { utf::max_unicode_code_point }
+        { utf::max_unicode_code_point },
+        L"\U0010FFFF"
     },
 };
 
@@ -377,6 +403,18 @@ BOOST_DATA_TEST_CASE(conv_utf8_to_utf32, boost::make_iterator_range(unicode_test
     BOOST_TEST_REQUIRE(success);
 }
 
+BOOST_DATA_TEST_CASE(conv_utf8_to_utfw, boost::make_iterator_range(unicode_test_data), tuple)
+{
+    std::wstring res;
+    utf::convz<utf::utf8, utf::utfw>(tuple.utf8.data(), std::back_inserter(res));
+    std::wstring res2;
+    utf::conv<utf::utf8, utf::utfw>(tuple.utf8.cbegin(), tuple.utf8.cend(), std::back_inserter(res2));
+    auto const success =
+        tuple.utfw == res &&
+        tuple.utfw == res2;
+    BOOST_TEST_REQUIRE(success);
+}
+
 BOOST_DATA_TEST_CASE(conv_utf16_to_utf8, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::string res;
@@ -401,6 +439,18 @@ BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(unicode_tes
     BOOST_TEST_REQUIRE(success);
 }
 
+BOOST_DATA_TEST_CASE(conv_utf16_to_utfw, boost::make_iterator_range(unicode_test_data), tuple)
+{
+    std::wstring res;
+    utf::convz<utf::utf16, utf::utfw>(tuple.utf16.data(), std::back_inserter(res));
+    std::wstring res2;
+    utf::conv<utf::utf16, utf::utfw>(tuple.utf16.cbegin(), tuple.utf16.cend(), std::back_inserter(res2));
+    auto const success =
+        tuple.utfw == res &&
+        tuple.utfw == res2;
+    BOOST_TEST_REQUIRE(success);
+}
+
 BOOST_DATA_TEST_CASE(conv_utf32_to_utf8, boost::make_iterator_range(unicode_test_data), tuple)
 {
     std::string res;
@@ -422,6 +472,18 @@ BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(unicode_tes
     auto const success =
         tuple.utf16 == res &&
         tuple.utf16 == res2;
+    BOOST_TEST_REQUIRE(success);
+}
+
+BOOST_DATA_TEST_CASE(conv_utf32_to_utfw, boost::make_iterator_range(unicode_test_data), tuple)
+{
+    std::wstring res;
+    utf::convz<utf::utf32, utf::utfw>(tuple.utf32.data(), std::back_inserter(res));
+    std::wstring res2;
+    utf::conv<utf::utf32, utf::utfw>(tuple.utf32.cbegin(), tuple.utf32.cend(), std::back_inserter(res2));
+    auto const success =
+        tuple.utfw == res &&
+        tuple.utfw == res2;
     BOOST_TEST_REQUIRE(success);
 }
 
@@ -461,6 +523,7 @@ BOOST_DATA_TEST_CASE(size_utf8, boost::make_iterator_range(unicode_test_data), t
         total_size += size;
         str += size;
     }
+    BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size);
 
     auto const total_size1 = utf::sizez<utf::utf8>(tuple.utf8.data());
     BOOST_TEST_REQUIRE(tuple.utf8.size() == total_size1);
@@ -482,6 +545,7 @@ BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(unicode_test_data), 
         str += size;
         
     }
+    BOOST_TEST_REQUIRE(tuple.utf16.size() == total_size);
 
     auto const total_size1 = utf::sizez<utf::utf16>(tuple.utf16.data());
     BOOST_TEST_REQUIRE(tuple.utf16.size() == total_size1);
@@ -502,12 +566,34 @@ BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(unicode_test_data), 
         total_size += size;
         str += size;
     }
+    BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size);
 
     auto const total_size1 = utf::sizez<utf::utf32>(tuple.utf32.data());
     BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size1);
 
     auto const total_size2 = utf::size<utf::utf32>(tuple.utf32.begin(), tuple.utf32.end());
     BOOST_TEST_REQUIRE(tuple.utf32.size() == total_size2);
+}
+
+BOOST_DATA_TEST_CASE(size_utfw, boost::make_iterator_range(unicode_test_data), tuple)
+{
+    static auto const max_symbol_size = utf::utfw::max_unicode_symbol_size;
+    size_t total_size = 0;
+    for (auto str = tuple.utfw.data(); *str;)
+    {
+        auto const size = utf::sizech<utf::utfw>(str);
+        BOOST_TEST_REQUIRE(!!size);
+        BOOST_TEST_REQUIRE(size <= max_symbol_size);
+        total_size += size;
+        str += size;
+    }
+    BOOST_TEST_REQUIRE(tuple.utfw.size() == total_size);
+
+    auto const total_size1 = utf::sizez<utf::utfw>(tuple.utfw.data());
+    BOOST_TEST_REQUIRE(tuple.utfw.size() == total_size1);
+
+    auto const total_size2 = utf::size<utf::utfw>(tuple.utfw.begin(), tuple.utfw.end());
+    BOOST_TEST_REQUIRE(tuple.utfw.size() == total_size2);
 }
 
 BOOST_DATA_TEST_CASE(size_utf8_supported, boost::make_iterator_range(supported_test_data), tuple)
@@ -554,50 +640,46 @@ BOOST_DATA_TEST_CASE(size_utf32_supported, boost::make_iterator_range(supported_
 
 namespace {
 
-inline uint64_t get_time() throw()
+uint64_t get_time() throw()
 {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 
-#if !defined(_M_IX86) && !defined(_M_X64)
-    #error Unknown platform
-#endif
-
+#if defined(_M_IX86) || defined(_M_X64)
     // Note: CPUID can be executed at any privilege level to serialize instruction execution. Serializing instruction
     //       execution guarantees that any modifications to flags, registers, and memory for previous instructions are
     //       completed before the next instruction is fetched and executed.
     int cpu_info[4];
     __cpuid(cpu_info, 0);
     return __rdtsc();
+#else
+    #error Unsupported architecture
+#endif
 
 #elif defined(__GNUC__) || defined(__clang__)
 
+#if defined(__i386__) || defined(__x86_64__)
     uint32_t lo, hi;
-
-#ifdef __i386__
-    #define DIRTY "%ebx", "%ecx"
-#elif __x86_64__
-    #define DIRTY "%rbx", "%rcx"
-#else
-    #error Unknown platform
-#endif
-
     asm volatile(
         "cpuid\n\t"
         "rdtsc\n\t"
-        : "=a"(lo), "=d"(hi)
-        : "a"(0)
-        : DIRTY);
-
-#undef DIRTY
-
+        : "=a"(lo), "=d"(hi) : "a"(0) :
+#if defined(__i386__)
+        "%ebx", "%ecx"
+#else
+        "%rbx", "%rcx"
+#endif
+        );
     return static_cast<uint64_t>(hi) << 32 | lo;
+#else
+    #error Unsupported architecture
+#endif
 
 #else
-#error get_time() is not implmeneted for this architecture
+    #error get_time() is not implmeneted
 #endif
 }
 
-inline uint64_t get_time_resolution() throw()
+uint64_t get_time_resolution() throw()
 {
 #if defined(_WIN32)
     LARGE_INTEGER beg_orig, end_orig, freq_orig;
@@ -628,8 +710,45 @@ inline uint64_t get_time_resolution() throw()
     auto const elapsed_time = end_time - beg_time;
     return static_cast<uint64_t>(elapsed_time * 1000000000ull / elapsed_orig.count());
 #else
-#error get_time() is not implmeneted for this architecture
+    #error get_time_resolution() is not implmeneted
 #endif
+}
+
+size_t const warmup_iterations = 2;
+size_t const measure_iterations = 16;
+
+template<
+    typename MeasureFn>
+double measure(
+    uint64_t const resolution,
+    MeasureFn && measure_fn)
+{
+    uint64_t sum_duration = 0;
+    for (size_t n = 0; n < warmup_iterations + measure_iterations; ++n)
+    {
+        uint64_t const beg_time = get_time();
+        measure_fn();
+        uint64_t const end_time = get_time();
+        if (n >= warmup_iterations)
+            sum_duration += end_time - beg_time;
+    }
+    return static_cast<double>(sum_duration) / measure_iterations / resolution;
+}
+
+template<
+    typename Msg>
+double dump(Msg && msg, double const duration)
+{
+    std::cout << (boost::format("%s: %fs") % std::forward<Msg>(msg) % duration).str() << std::endl;
+    return duration;
+}
+
+template<
+    typename Msg>
+double dump(Msg && msg, double const duration, double const base_duration)
+{
+    std::cout << (boost::format("%s: %fs (%+.2f%%)") % std::forward<Msg>(msg) % duration % (100 * (duration / base_duration - 1))).str() << std::endl;
+    return duration;
 }
 
 }
@@ -644,177 +763,141 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 {
     static size_t const utf32_max_size = 16 * 1024 * 1024;
     static size_t const utf16_max_size = utf32_max_size * utf::utf16::max_unicode_symbol_size;
-    static size_t const utf8_max_size = utf32_max_size * utf::utf8::max_unicode_symbol_size;
-    static size_t const iterations = 16;
+    static size_t const utf8_max_size  = utf32_max_size * utf::utf8::max_unicode_symbol_size;
+    static size_t const utfw_max_size  = utf32_max_size * utf::utfw::max_unicode_symbol_size;
 
-    std::vector<char> utf8_buf;
-    std::vector<char16_t> utf16_buf;
-    std::vector<char32_t> utf32_buf;
+    std::vector<char    > utf8_buf ; utf8_buf .reserve(utf8_max_size );
+    std::vector<char16_t> utf16_buf; utf16_buf.reserve(utf16_max_size);
+    std::vector<char32_t> utf32_buf; utf32_buf.reserve(utf32_max_size);
+    std::vector<wchar_t > utfw_buf ; utfw_buf .reserve(utfw_max_size );
 
-    utf8_buf.reserve(utf8_max_size);
-    utf16_buf.reserve(utf16_max_size);
-    utf32_buf.reserve(utf32_max_size);
-
-    boost::random::mt19937 random(0);
-    for (auto n = utf32_max_size; n-- > 0; )
     {
-        auto cp = random() % (utf::max_unicode_code_point + 1);
-        if (utf::is_surrogate(cp))
-            cp -= utf::min_surrogate;
+        boost::random::mt19937 random(0);
+        for (auto n = utf32_max_size; n-- > 0; )
+        {
+            auto cp = random() % (utf::max_unicode_code_point + 1);
+            if (utf::is_surrogate(cp))
+                cp -= utf::min_surrogate;
 
 #if defined(__GNUC__)
-        // Bug: std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS failed to convert \xFFFF code point correctly.
-        if (cp == 0xFFFF)
-            cp = 0xFEFF;
+            // Bug: std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS failed to convert \xFFFF code point correctly.
+            if (cp == 0xFFFF)
+                cp = 0xFEFF;
 #endif
 
-        utf32_buf.push_back(cp);
+            utf32_buf.push_back(cp);
+        }
     }
+
+    std::cout << (boost::format("sizeof wchar_t: %u (%s)") % sizeof(wchar_t) %
+#if defined(_WIN32)
+        "UTF16"
+#else
+        "UTF32"
+#endif
+        ).str() << std::endl;
 
     auto const resolution = get_time_resolution();
     std::cout << (boost::format("Resolution: %u") % resolution).str() << std::endl;
 
-    double utf8_utf16_duration;
-    double utf16_utf8_duration;
+    dump("UTF32 ==> UTF8 ", measure(resolution, [&] { utf8_buf .clear(); utf::conv<utf::utf32, utf::utf8 >(utf32_buf.begin(), utf32_buf.end(), std::back_inserter(utf8_buf )); }));
+    dump("UTF32 ==> UTF16", measure(resolution, [&] { utf16_buf.clear(); utf::conv<utf::utf32, utf::utf16>(utf32_buf.begin(), utf32_buf.end(), std::back_inserter(utf16_buf)); }));
+    dump("UTF32 ==> UTFW ", measure(resolution, [&] { utfw_buf .clear(); utf::conv<utf::utf32, utf::utfw >(utf32_buf.begin(), utf32_buf.end(), std::back_inserter(utfw_buf )); }));
+
+    auto const utf16_utf8_duration =
+    dump("UTF16 ==> UTF8 ", measure(resolution, [&] { utf8_buf .clear(); utf::conv<utf::utf16, utf::utf8 >(utf16_buf.begin(), utf16_buf.end(), std::back_inserter(utf8_buf )); }));
+    dump("UTF16 ==> UTF32", measure(resolution, [&] { utf32_buf.clear(); utf::conv<utf::utf16, utf::utf32>(utf16_buf.begin(), utf16_buf.end(), std::back_inserter(utf32_buf)); }));
+    dump("UTF16 ==> UTFW ", measure(resolution, [&] { utfw_buf .clear(); utf::conv<utf::utf16, utf::utfw >(utf16_buf.begin(), utf16_buf.end(), std::back_inserter(utfw_buf )); }));
+
+    auto const utf8_utf16_duration =
+    dump("UTF8  ==> UTF16", measure(resolution, [&] { utf16_buf.clear(); utf::conv<utf::utf8, utf::utf16>(utf8_buf.begin(), utf8_buf.end(), std::back_inserter(utf16_buf)); }));
+    dump("UTF8  ==> UTF32", measure(resolution, [&] { utf32_buf.clear(); utf::conv<utf::utf8, utf::utf32>(utf8_buf.begin(), utf8_buf.end(), std::back_inserter(utf32_buf)); }));
+    auto const utf8_utfw_duration =
+    dump("UTF8  ==> UTFW ", measure(resolution, [&] { utfw_buf .clear(); utf::conv<utf::utf8, utf::utfw >(utf8_buf.begin(), utf8_buf.end(), std::back_inserter(utfw_buf )); }));
+
+    auto const utfw_utf8_duration =
+    dump("UTFW  ==> UTF8 ", measure(resolution, [&] { utf8_buf .clear(); utf::conv<utf::utfw, utf::utf8 >(utfw_buf.begin(), utfw_buf.end(), std::back_inserter(utf8_buf )); }));
+    dump("UTFW  ==> UTF16", measure(resolution, [&] { utf16_buf.clear(); utf::conv<utf::utfw, utf::utf16>(utfw_buf.begin(), utfw_buf.end(), std::back_inserter(utf16_buf)); }));
+    dump("UTFW  ==> UTF32", measure(resolution, [&] { utf32_buf.clear(); utf::conv<utf::utfw, utf::utf32>(utfw_buf.begin(), utfw_buf.end(), std::back_inserter(utf32_buf)); }));
 
     {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf8_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf32, utf::utf8>(&utf32_buf.front(), &utf32_buf.back() + 1, std::back_inserter(utf8_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF32 ==> UTF8 : %fs") % duration).str() << std::endl;
-    }
-
-    {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf16_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf32, utf::utf16>(&utf32_buf.front(), &utf32_buf.back() + 1, std::back_inserter(utf16_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF32 ==> UTF16: %fs") % duration).str() << std::endl;
-    }
-
-    {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf8_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf16, utf::utf8>(&utf16_buf.front(), &utf16_buf.back() + 1, std::back_inserter(utf8_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        utf16_utf8_duration = duration;
-        std::cout << (boost::format("UTF16 ==> UTF8 : %fs") % duration).str() << std::endl;
-    }
-
-    {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf32_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf16, utf::utf32>(&utf16_buf.front(), &utf16_buf.back() + 1, std::back_inserter(utf32_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF16 ==> UTF32: %fs") % duration).str() << std::endl;
-    }
-
-    {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf16_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf8, utf::utf16>(&utf8_buf.front(), &utf8_buf.back() + 1, std::back_inserter(utf16_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        utf8_utf16_duration = duration;
-        std::cout << (boost::format("UTF8  ==> UTF16: %fs") % duration).str() << std::endl;
-    }
-
-    {
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
-        {
-            utf32_buf.clear();
-            auto const beg_time = get_time();
-            utf::conv<utf::utf8, utf::utf32>(&utf8_buf.front(), &utf8_buf.back() + 1, std::back_inserter(utf32_buf));
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
-        }
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF8  ==> UTF32: %fs") % duration).str() << std::endl;
-    }
-
 #if _MSC_VER >= 1900
-// Bug: MSVC 2017 linker: error LNK2001: unresolved external symbol "__declspec(dllimport) public: static class std::locale::id std::codecvt<char16_t,char,struct _Mbstatet>::id" (__imp_?id@?$codecvt@_SDU_Mbstatet@@@std@@2V0locale@2@A)
-using char16_type = int16_t;
+        // Bug: MSVC 2017 linker: error LNK2001: unresolved external symbol "__declspec(dllimport) public: static class std::locale::id std::codecvt<char16_t,char,struct _Mbstatet>::id" (__imp_?id@?$codecvt@_SDU_Mbstatet@@@std@@2V0locale@2@A)
+        using char16_type = int16_t;
 #else
-using char16_type = char16_t;
+        using char16_type = char16_t;
 #endif
 
-    std::cout << "codecvt_utf8_utf16<char16_t>:" << std::endl;
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_type
+        std::cout << "codecvt_utf8_utf16<char16_t>:" << std::endl;
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_type
 #if defined(__GNUC__)
-        // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
-        , ww898::utf::max_unicode_code_point
-        , std::little_endian
+            // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
+            , ww898::utf::max_unicode_code_point
+            , std::little_endian
 #endif
-        >, char16_type> cvt;
+            >, char16_type> cvt;
 
-    {
-        std::string res;
-        res.reserve(utf8_max_size);
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
         {
-            res.clear();
-            auto const beg_time = get_time();
-            res = cvt.to_bytes(reinterpret_cast<char16_type const *>(&utf16_buf.front()), reinterpret_cast<char16_type const *>(&utf16_buf.back()) + 1);
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
+            std::string res;
+            res.reserve(utf8_max_size);
+            auto const duration = measure(resolution, [&]
+                {
+                    res = cvt.to_bytes(reinterpret_cast<char16_type const *>(&utf16_buf.front()), reinterpret_cast<char16_type const *>(&utf16_buf.back()) + 1);
+                });
+            BOOST_TEST_REQUIRE(res.size() == utf8_buf.size());
+            auto const same = memcmp(&utf8_buf.front(), &res.front(), utf8_buf.size()) == 0;
+            BOOST_TEST_REQUIRE(same);
+            dump("UTF16 ==> UTF8 ", duration, utf16_utf8_duration);
         }
-        BOOST_TEST_REQUIRE(res.size() == utf8_buf.size());
-        auto const same = memcmp(&utf8_buf.front(), &res.front(), utf8_buf.size()) == 0;
-        BOOST_TEST_REQUIRE(same);
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF16 ==> UTF8 : %fs (%+.2f%%)") % duration % (100 * (duration / utf16_utf8_duration - 1))).str() << std::endl;
+
+        {
+            std::basic_string<char16_type> res;
+            res.reserve(utf16_max_size);
+            auto const duration = measure(resolution, [&] { res = cvt.from_bytes(&utf8_buf.front(), &utf8_buf.back() + 1); });
+            BOOST_TEST_REQUIRE(res.size() == utf16_buf.size());
+            auto const same = memcmp(&utf16_buf.front(), &res.front(), sizeof(char16_t) * utf16_buf.size()) == 0;
+            BOOST_TEST_REQUIRE(same);
+            dump("UTF8  ==> UTF16", duration, utf8_utf16_duration);
+        }
     }
 
     {
-        std::basic_string<char16_type> res;
-        res.reserve(utf16_max_size);
-        uint64_t sum_duration = 0;
-        for (auto n = iterations; n-- > 0;)
+#if defined(_WIN32)
+        std::cout << "codecvt_utf8_utf16<wchar_t>:" << std::endl;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> cvt;
+#else
+        std::cout << "codecvt_utf8<wchar_t>:" << std::endl;
+        std::wstring_convert<std::codecvt_utf8<wchar_t
+#if defined(__GNUC__)
+            // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
+            , ww898::utf::max_unicode_code_point
+            , std::little_endian
+#endif
+            >, wchar_t> cvt;
+#endif
+
         {
-            res.clear();
-            auto const beg_time = get_time();
-            res = cvt.from_bytes(&utf8_buf.front(), &utf8_buf.back() + 1);
-            auto const end_time = get_time();
-            sum_duration += end_time - beg_time;
+            std::string res;
+            res.reserve(utf8_max_size);
+            auto const duration = measure(resolution, [&]
+                {
+                    res = cvt.to_bytes(&utfw_buf.front(), &utfw_buf.back() + 1);
+                });
+            BOOST_TEST_REQUIRE(res.size() == utf8_buf.size());
+            auto const same = memcmp(&utf8_buf.front(), &res.front(), utf8_buf.size()) == 0;
+            BOOST_TEST_REQUIRE(same);
+            dump("UTFW  ==> UTF8 ", duration, utfw_utf8_duration);
         }
-        BOOST_TEST_REQUIRE(res.size() == utf16_buf.size());
-        auto const same = memcmp(&utf16_buf.front(), &res.front(), sizeof(char16_t) * utf16_buf.size()) == 0;
-        BOOST_TEST_REQUIRE(same);
-        auto const duration = static_cast<double>(sum_duration) / iterations / resolution;
-        std::cout << (boost::format("UTF8  ==> UTF16: %fs (%+.2f%%)") % duration % (100 * (duration / utf8_utf16_duration - 1))).str() << std::endl;
+
+        {
+            std::wstring res;
+            res.reserve(utfw_max_size);
+            auto const duration = measure(resolution, [&] { res = cvt.from_bytes(&utf8_buf.front(), &utf8_buf.back() + 1); });
+            BOOST_TEST_REQUIRE(res.size() == utfw_buf.size());
+            auto const same = memcmp(&utfw_buf.front(), &res.front(), sizeof(wchar_t) * utfw_buf.size()) == 0;
+            BOOST_TEST_REQUIRE(same);
+            dump("UTF8  ==> UTFW ", duration, utf8_utfw_duration);
+        }
     }
 }
 

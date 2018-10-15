@@ -415,4 +415,10 @@ Oit conv(It && it, It && eit, Oit && oit)
         std::forward<Oit>(oit));
 }
 
+#if (_WIN32)
+typedef utf16 utfw;
+#else
+typedef utf32 utfw;
+#endif
+
 }}
