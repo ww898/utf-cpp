@@ -44,8 +44,14 @@
 #include <codecvt>
 #include <forward_list>
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #include <chrono>
+
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 #endif
 
 namespace ww898 {
@@ -679,6 +685,27 @@ uint64_t get_time() throw()
 #endif
 }
 
+#if defined(__linux__) || defined(__APPLE__)
+void current_utc_time(timespec * ts)
+{
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    if (host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock) != KERN_SUCCESS)
+        std::abort();
+    if (clock_get_time(cclock, &mts) != KERN_SUCCESS)
+        std::abort();
+    if (mach_port_deallocate(mach_task_self(), cclock) != KERN_SUCCESS)
+        std::abort();
+    ts->tv_sec = mts.tv_sec;
+    ts->tv_nsec = mts.tv_nsec;
+#else
+    if (!clock_gettime(CLOCK_REALTIME, ts))
+        std::abort();
+#endif
+}
+#endif
+
 uint64_t get_time_resolution() throw()
 {
 #if defined(_WIN32)
@@ -695,14 +722,12 @@ uint64_t get_time_resolution() throw()
     auto const elapsed_orig = end_orig.QuadPart - beg_orig.QuadPart;
     auto const elapsed_time = end_time - beg_time;
     return (freq_orig.QuadPart * elapsed_time + elapsed_orig / 2) / elapsed_orig;
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
     timespec beg_orig, end_orig;
-    if (clock_gettime(CLOCK_REALTIME, &beg_orig))
-        std::abort();
+    current_utc_time(&beg_orig);
     auto const beg_time = get_time();
     sleep(1);
-    if (clock_gettime(CLOCK_REALTIME, &end_orig))
-        std::abort();
+    current_utc_time(&end_orig);
     auto const end_time = get_time();
     std::chrono::nanoseconds const elapsed_orig =
         (std::chrono::seconds(end_orig.tv_sec) + std::chrono::nanoseconds(end_orig.tv_nsec)) -
@@ -879,10 +904,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
         {
             std::string res;
             res.reserve(utf8_max_size);
-            auto const duration = measure(resolution, [&]
-                {
-                    res = cvt.to_bytes(&utfw_buf.front(), &utfw_buf.back() + 1);
-                });
+            auto const duration = measure(resolution, [&] { res = cvt.to_bytes(&utfw_buf.front(), &utfw_buf.back() + 1); });
             BOOST_TEST_REQUIRE(res.size() == utf8_buf.size());
             auto const same = memcmp(&utf8_buf.front(), &res.front(), utf8_buf.size()) == 0;
             BOOST_TEST_REQUIRE(same);
