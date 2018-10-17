@@ -322,40 +322,81 @@ size_t size(It it, It const eit)
     return size;
 }
 
-template<
-    typename Utf,
-    typename Outf,
-    typename It,
-    typename Oit>
-Oit convz(It it, Oit oit)
-{
-    while (true)
-    {
-        auto const cp = Utf::read(it, [] (It &) {});
-        if (!cp)
-            return oit;
-        Outf::write(cp, oit);
-    }
-}
-
 namespace detail {
+
+enum struct convz_impl { normal, binary_copy };
 
 template<
     typename Utf,
     typename Outf,
     typename It,
     typename Oit,
-    bool>
-struct conv_strategy;
+    convz_impl>
+struct convz_strategy
+{
+    Oit operator()(It it, Oit oit) const
+    {
+        while (true)
+        {
+            auto const cp = Utf::read(it, [] (It &) {});
+            if (!cp)
+                return oit;
+            Outf::write(cp, oit);
+        }
+    }
+};
 
 template<
     typename Utf,
     typename Outf,
     typename It,
     typename Oit>
-struct conv_strategy<Utf, Outf, It, Oit, false> final
+struct convz_strategy<Utf, Outf, It, Oit, convz_impl::binary_copy>
 {
-    Oit operator()(It it, It const eit, Oit oit)
+    Oit operator()(It it, Oit oit) const
+    {
+        while (true)
+        {
+            auto const ch = *it++;
+            if (!ch)
+                return oit;
+            *oit++ = ch;
+        }
+    }
+};
+
+}
+
+template<
+    typename Utf,
+    typename Outf,
+    typename It,
+    typename Oit>
+Oit convz(It && it, Oit && oit)
+{
+    return detail::convz_strategy<Utf, Outf,
+            typename std::decay<It>::type,
+            typename std::decay<Oit>::type,
+            std::is_same<Utf, Outf>::value
+                ? detail::convz_impl::binary_copy
+                : detail::convz_impl::normal>()(
+        std::forward<It>(it),
+        std::forward<Oit>(oit));
+}
+
+namespace detail {
+
+enum struct conv_impl { normal, random_interator, binary_copy };
+
+template<
+    typename Utf,
+    typename Outf,
+    typename It,
+    typename Oit,
+    conv_impl>
+struct conv_strategy final
+{
+    Oit operator()(It it, It const eit, Oit oit) const
     {
         auto const verify_fn = [&eit] (It & it)
             {
@@ -373,9 +414,9 @@ template<
     typename Outf,
     typename It,
     typename Oit>
-struct conv_strategy<Utf, Outf, It, Oit, true> final
+struct conv_strategy<Utf, Outf, It, Oit, conv_impl::random_interator> final
 {
-    Oit operator()(It it, It const eit, Oit oit)
+    Oit operator()(It it, It const eit, Oit oit) const
     {
         if (static_cast<size_t>(eit - it) >= Utf::max_supported_symbol_size)
         {
@@ -394,31 +435,54 @@ struct conv_strategy<Utf, Outf, It, Oit, true> final
     }
 };
 
+template<
+    typename Utf,
+    typename Outf,
+    typename It,
+    typename Oit>
+struct conv_strategy<Utf, Outf, It, Oit, conv_impl::binary_copy> final
+{
+    Oit operator()(It it, It const eit, Oit oit) const
+    {
+        while (it != eit)
+            *oit++ = *it++;
+        return oit;
+    }
+};
+
 }
 
 template<
     typename Utf,
     typename Outf,
     typename It,
-    typename Oit,
-    bool is_random_access_iterator = std::is_base_of<
-        std::random_access_iterator_tag,
-        typename std::iterator_traits<typename std::decay<It>::type>::iterator_category>::value>
+    typename Oit>
 Oit conv(It && it, It && eit, Oit && oit)
 {
     return detail::conv_strategy<Utf, Outf,
             typename std::decay<It>::type,
             typename std::decay<Oit>::type,
-            is_random_access_iterator>()(
+            std::is_same<Utf, Outf>::value
+                ? detail::conv_impl::binary_copy
+                : std::is_base_of<std::random_access_iterator_tag, typename std::iterator_traits<typename std::decay<It>::type>::iterator_category>::value
+                    ? detail::conv_impl::random_interator
+                    : detail::conv_impl::normal>()(
         std::forward<It>(it),
         std::forward<It>(eit),
         std::forward<Oit>(oit));
 }
 
-#if (_WIN32)
-typedef utf16 utfw;
-#else
-typedef utf32 utfw;
-#endif
+namespace detail {
+
+template<
+    size_t wchar_size>
+struct wchar_selector {};
+
+template<> struct wchar_selector<2> { typedef utf16 utfw_type; };
+template<> struct wchar_selector<4> { typedef utf32 utfw_type; };
+
+}
+
+typedef detail::wchar_selector<sizeof(wchar_t)>::utfw_type utfw;
 
 }}
