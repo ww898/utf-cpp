@@ -1,0 +1,68 @@
+#### Windows 10 x86 (Visual Studio 2015 v14.0.25431.01 Update 3):
+```
+Running 498 test cases...
+compiler: MSVC v19.00.24215
+architecture: x86
+__cpp_lib_string_view: 201402
+sizeof wchar_t: 2
+UTFW: UTF16
+Resolution: 3400037154
+UTF80 ==> UTF80: 0.121053855s
+UTF80 ==> UTF16: 0.294832617s
+UTF80 ==> UTF32: 0.165831649s
+UTF80 ==> UTFW0: 0.295320985s
+UTF16 ==> UTF80: 0.322142692s
+UTF16 ==> UTF16: 0.065459482s
+UTF16 ==> UTF32: 0.099328754s
+UTF16 ==> UTFW0: 0.064951182s
+UTF32 ==> UTF80: 0.277160365s
+UTF32 ==> UTF16: 0.183142209s
+UTF32 ==> UTF32: 0.037691454s
+UTF32 ==> UTFW0: 0.183146941s
+UTFW0 ==> UTF80: 0.322251900s
+UTFW0 ==> UTF16: 0.065639366s
+UTFW0 ==> UTF32: 0.099918587s
+UTFW0 ==> UTFW0: 0.070488823s
+codecvt_utf8_utf16<char16_t>:
+UTF16 ==> UTF80: 0.518749568s (+61.03%)
+UTF80 ==> UTF16: 0.402079819s (+36.38%)
+codecvt_utf8_utf16<wchar_t>:
+UTFW0 ==> UTF80: 0.537878556s (+66.91%)
+UTF80 ==> UTFW0: 0.420184022s (+42.28%)
+
+*** No errors detected
+```
+#### Windows 10 x64 (Visual Studio 2015 v14.0.25431.01 Update 3):
+```
+Running 498 test cases...
+compiler: MSVC v19.00.24215
+architecture: x64
+__cpp_lib_string_view: 201402
+sizeof wchar_t: 2
+UTFW: UTF16
+Resolution: 3400036795
+UTF80 ==> UTF80: 0.122129080s
+UTF80 ==> UTF16: 0.234636888s
+UTF80 ==> UTF32: 0.162592528s
+UTF80 ==> UTFW0: 0.233851187s
+UTF16 ==> UTF80: 0.308472615s
+UTF16 ==> UTF16: 0.062053971s
+UTF16 ==> UTF32: 0.113737088s
+UTF16 ==> UTFW0: 0.062633449s
+UTF32 ==> UTF80: 0.272212547s
+UTF32 ==> UTF16: 0.147827226s
+UTF32 ==> UTF32: 0.036841488s
+UTF32 ==> UTFW0: 0.147040939s
+UTFW0 ==> UTF80: 0.307266225s
+UTFW0 ==> UTF16: 0.062686765s
+UTFW0 ==> UTF32: 0.114688897s
+UTFW0 ==> UTFW0: 0.069590153s
+codecvt_utf8_utf16<char16_t>:
+UTF16 ==> UTF80: 0.521156968s (+68.95%)
+UTF80 ==> UTF16: 0.396382221s (+68.93%)
+codecvt_utf8_utf16<wchar_t>:
+UTFW0 ==> UTF80: 0.549410364s (+78.81%)
+UTF80 ==> UTFW0: 0.375752264s (+60.68%)
+
+*** No errors detected
+```

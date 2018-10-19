@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-_gcc_dir=tmp_gcc
-_clang_dir=tmp_clang
+_gcc_dir=obj.gcc
+_clang_dir=obj.clang
 
 mkdir -p "$_gcc_dir"
 pushd "$_gcc_dir"

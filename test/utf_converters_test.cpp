@@ -1,7 +1,7 @@
 ﻿/*
  * MIT License
  * 
- * Copyright (c) 2017-2018 Mikhail Pilin
+ * Copyright (c) 2017-2019 Mikhail Pilin
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 #endif
 
 #include <ww898/utf_converters.hpp>
+#include <ww898/utf_sizes.hpp>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -348,14 +349,14 @@ unicode_tuple const unicode_test_data[] =
     {
         { '\xED', '\x9F', '\xBF' },
         { 0xD7FF },
-        { utf::min_surrogate - 1 },
+        { utf::utf16::min_surrogate - 1 },
         L"\U0000D7FF"
     },
 
     {
         { '\xEE', '\x80', '\x80' },
         { 0xE000 },
-        { utf::max_surrogate + 1 },
+        { utf::utf16::max_surrogate + 1 },
         L"\U0000E000"
     },
 
@@ -382,13 +383,22 @@ supported_tuple const supported_test_data[] =
     },
 
     {
+        { '\xFC', '\x95', '\xA9', '\xB6', '\x83', '\xAC' },
+        { 0x15A760EC }
+    },
+
+    {
         { '\xFD', '\x95', '\xA9', '\xB6', '\x83', '\xAC' },
         { 0x55A760EC }
     },
+
+    {
+        { '\xFD', '\xBF', '\xBF', '\xBF', '\xBF', '\xBF' },
+        { utf::utf32::max_supported_code_point }
+    },
 };
 
-template<
-    typename Ch>
+template<typename Ch>
 struct utf_namer {};
 
 template<> struct utf_namer<         char> { static char const value[]; };
@@ -423,28 +433,37 @@ void run_conv_test(
     BOOST_TEST_REQUIRE(success);
 }
 
-template<
-    typename Ch>
-void run_size_test(
-    std::basic_string<Ch> const & buf)
+template<typename Ch>
+void run_size_test(std::basic_string<Ch> const & buf)
 {
-    typedef utf::utf_selector_t<Ch> utf_type;
-
-    size_t total_size0 = 0;
+    size_t total_chars = 0;
+    size_t total_cp = 0;
     for (auto str = buf.data(); *str;)
     {
-        auto const size = utf::sizech<utf_type>(str);
+        auto const size = utf::char_size<utf::utf_selector_t<Ch>>(str);
         BOOST_TEST_REQUIRE(!!size);
-        total_size0 += size;
+        total_chars += size;
+        ++total_cp;
         str += size;
     }
-    BOOST_TEST_REQUIRE(buf.size() == total_size0);
+    BOOST_TEST_REQUIRE(buf.size() == total_chars);
 
-    auto const total_size1 = utf::sizez<utf_type>(buf.data());
-    BOOST_TEST_REQUIRE(buf.size() == total_size1);
+    auto const total_cp1 = utf::size<utf::utf_selector_t<Ch>>(buf.data());
+    BOOST_TEST_REQUIRE(total_cp == total_cp1);
 
-    auto const total_size2 = utf::size<utf_type>(buf.cbegin(), buf.cend());
-    BOOST_TEST_REQUIRE(buf.size() == total_size2);
+    auto const total_cp2 = utf::size<utf::utf_selector_t<Ch>>(buf.cbegin(), buf.cend());
+    BOOST_TEST_REQUIRE(total_cp == total_cp2);
+
+    auto const total_cp3 = utf::size(buf.data());
+    BOOST_TEST_REQUIRE(total_cp == total_cp3);
+
+    auto const total_cp4 = utf::size(buf);
+    BOOST_TEST_REQUIRE(total_cp == total_cp4);
+
+#if __cpp_lib_string_view >= 201606
+    auto const total_cp5 = utf::size(std::basic_string_view<Ch>(buf.data(), buf.size()));
+    BOOST_TEST_REQUIRE(total_cp == total_cp5);
+#endif
 }
 
 }
@@ -477,102 +496,41 @@ BOOST_DATA_TEST_CASE(size_uw , boost::make_iterator_range(unicode_test_data), tu
 BOOST_DATA_TEST_CASE(size_u8_supported , boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.u8 ); }
 BOOST_DATA_TEST_CASE(size_u32_supported, boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.u32); }
 
-BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char,          char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char, unsigned char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char, signed   char>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<char>, utf::utf_selector_t<unsigned char>>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<char>, utf::utf_selector_t<signed   char>>::value);
 
-BOOST_STATIC_ASSERT(utf::is_utf_same<signed char,          char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<signed char, unsigned char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<signed char, signed   char>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<signed char>, utf::utf_selector_t<         char>>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<signed char>, utf::utf_selector_t<unsigned char>>::value);
 
-BOOST_STATIC_ASSERT(utf::is_utf_same<char,          char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<char, unsigned char>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<char, signed   char>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<unsigned char>, utf::utf_selector_t<       char>>::value);
+BOOST_STATIC_ASSERT(std::is_same<utf::utf_selector_t<unsigned char>, utf::utf_selector_t<signed char>>::value);
 
-BOOST_STATIC_ASSERT(utf::is_utf_same<char16_t, char16_t>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<char32_t, char32_t>::value);
-BOOST_STATIC_ASSERT(utf::is_utf_same<wchar_t , wchar_t >::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char16_t>, utf::utf_selector_t<         char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char16_t>, utf::utf_selector_t<signed   char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char16_t>, utf::utf_selector_t<unsigned char>>::value);
 
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char, char16_t>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char, char32_t>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char, wchar_t >::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char32_t>, utf::utf_selector_t<         char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char32_t>, utf::utf_selector_t<signed   char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char32_t>, utf::utf_selector_t<unsigned char>>::value);
 
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, char>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, char>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t , char>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<char16_t>, utf::utf_selector_t<char32_t>>::value);
 
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, char32_t>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, char16_t>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<         char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<signed   char>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<unsigned char>>::value);
 
 #if defined(_WIN32)
 
-BOOST_STATIC_ASSERT( utf::is_utf_same<char16_t, wchar_t>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, wchar_t>::value);
-
-BOOST_STATIC_ASSERT( utf::is_utf_same<wchar_t, char16_t>::value);
-BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t, char32_t>::value);
+BOOST_STATIC_ASSERT( std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<char16_t>>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<char32_t>>::value);
 
 #elif defined(__linux__) || defined(__APPLE__)
 
-BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, wchar_t>::value);
-BOOST_STATIC_ASSERT( utf::is_utf_same<char32_t, wchar_t>::value);
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t, char16_t>::value);
-BOOST_STATIC_ASSERT( utf::is_utf_same<wchar_t, char32_t>::value);
+BOOST_STATIC_ASSERT(!std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<char16_t>>::value);
+BOOST_STATIC_ASSERT( std::is_same<utf::utf_selector_t<wchar_t>, utf::utf_selector_t<char32_t>>::value);
 
 #else
-    #error Unknown platform
-#endif
-
-#if __cpp_constexpr >= 201603
-
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char,          char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char, unsigned char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char, signed   char>);
-
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char,          char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char, unsigned char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char, signed   char>);
-
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<char,          char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<char, unsigned char>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<char, signed   char>);
-
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<char16_t, char16_t>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<char32_t, char32_t>);
-BOOST_STATIC_ASSERT(utf::is_utf_same_v<wchar_t , wchar_t >);
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, char16_t>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, char32_t>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, wchar_t >);
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, char>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, char>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t , char>);
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, char32_t>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, char16_t>);
-
-#if defined(_WIN32)
-
-BOOST_STATIC_ASSERT( utf::is_utf_same_v<char16_t, wchar_t>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, wchar_t>);
-
-BOOST_STATIC_ASSERT( utf::is_utf_same_v<wchar_t, char16_t>);
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t, char32_t>);
-
-#elif defined(__linux__) || defined(__APPLE__)
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, wchar_t>);
-BOOST_STATIC_ASSERT( utf::is_utf_same_v<char32_t, wchar_t>);
-
-BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t, char16_t>);
-BOOST_STATIC_ASSERT( utf::is_utf_same_v<wchar_t, char32_t>);
-
-#else
-    #error Unknown platform
-#endif
-
+#error Unknown platform
 #endif
 
 namespace {
@@ -589,10 +547,10 @@ uint64_t get_time() throw()
     __cpuid(cpu_info, 0);
     return __rdtsc();
 #else
-    #error Unsupported architecture
+#error Unsupported architecture
 #endif
 
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__) // Clang also defines __GNUC__ for compatibility with GCC.
 
 #if defined(__i386__) || defined(__x86_64__)
     uint32_t lo, hi;
@@ -608,11 +566,11 @@ uint64_t get_time() throw()
         );
     return static_cast<uint64_t>(hi) << 32 | lo;
 #else
-    #error Unsupported architecture
+#error Unsupported architecture
 #endif
 
 #else
-    #error Unknown compiler
+#error Unknown compiler
 #endif
 }
 
@@ -666,7 +624,7 @@ uint64_t get_time_resolution() throw()
     auto const elapsed_time = end_time - beg_time;
     return static_cast<uint64_t>(elapsed_time * 1000000000ull / elapsed_orig.count());
 #else
-    #error Unknown platform
+#error Unknown platform
 #endif
 }
 
@@ -759,20 +717,22 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 {
     static size_t const symbol_count = 16 * 1024 * 1024;
 
-    std::vector<char    > buf_u8 ;
-    std::vector<char16_t> buf_u16;
     std::vector<char32_t> buf_u32;
-    std::vector<wchar_t > buf_uw ;
 
     {
         boost::random::mt19937 random(0);
         for (auto n = symbol_count; n-- > 0; )
         {
-            auto cp = random() % (utf::max_unicode_code_point + 1);
-            if (utf::is_surrogate(cp))
-                cp -= utf::min_surrogate;
+            uint32_t cp;
+            if (n % 4 == 0)
+                cp = random() % 0x80;
+            else
+                cp = random() % (utf::max_unicode_code_point + 1 - 0x80) + 0x80;
 
-#if defined(__GNUC__)
+            if (utf::utf16::min_surrogate <= cp && cp <= utf::utf16::max_surrogate)
+                cp -= utf::utf16::min_surrogate;
+
+#if defined(__GNUC__) && !defined(__clang__)
             // Bug: std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS failed to convert \xFFFF code point correctly.
             if (cp == 0xFFFF)
                 cp = 0xFEFF;
@@ -780,14 +740,34 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 
             buf_u32.push_back(cp);
         }
-        utf::conv<utf::utf32, utf::utf8 >(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_u8 ));
-        utf::conv<utf::utf32, utf::utf16>(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_u16));
-        utf::conv<utf::utf32, utf::utfw >(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_uw ));
     }
 
+    std::vector<char    > buf_u8 ;
+    std::vector<char16_t> buf_u16;
+    std::vector<wchar_t > buf_uw ;
+
+    utf::conv<utf::utf32, utf::utf8 >(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_u8 ));
+    utf::conv<utf::utf32, utf::utf16>(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_u16));
+    utf::conv<utf::utf32, utf::utfw >(buf_u32.cbegin(), buf_u32.cend(), std::back_inserter(buf_uw ));
+
     std::cout <<
+#if defined(_MSC_FULL_VER)
+        "compiler: MSVC v" << _MSC_FULL_VER / 10000000 << '.' << std::setw(2) << std::setfill('0') << _MSC_FULL_VER / 100000 % 100 << '.' << _MSC_FULL_VER % 100000 << std::endl <<
+#elif defined(__clang__) && defined(__APPLE__)
+        "compiler: Apple Clang v" << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__ << std::endl <<
+#elif defined(__clang__)
+        "compiler: Clang v" << __clang_major__ << '.' << __clang_minor__ << '.' << __clang_patchlevel__ << std::endl <<
+#elif defined(__GNUC__) && !defined(__clang__)
+        "compiler: GNU v" << __GNUC__ << '.' << __GNUC_MINOR__ << '.' << __GNUC_PATCHLEVEL__ << std::endl <<
+#endif
+        
+#if defined(_M_IX86) || defined(__i386__)
+        "architecture: x86" << std::endl <<
+#elif defined(_M_X64) || defined(__x86_64__)
+        "architecture: x64" << std::endl <<
+#endif
+
         "__cpp_lib_string_view: " << std::dec << __cpp_lib_string_view << std::endl <<
-        "__cpp_constexpr      : " << std::dec << __cpp_constexpr << std::endl <<
         "sizeof wchar_t: " << sizeof(wchar_t) << std::endl <<
         utf_namer<wchar_t >::value << ": UTF" << 8 * sizeof(wchar_t) << std::endl;
 
@@ -821,7 +801,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 
         std::cout << "codecvt_utf8_utf16<char16_t>:" << std::endl;
         std::wstring_convert<std::codecvt_utf8_utf16<char16_type
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
             // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
             , ww898::utf::max_unicode_code_point
             , std::little_endian
@@ -865,7 +845,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 #else
         std::cout << "codecvt_utf8<wchar_t>:" << std::endl;
         std::wstring_convert<std::codecvt_utf8<wchar_t
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
             // Bug: The std::little_endian should be selected directly in std::codecvt_utf8_utf16 for GCC v5.4.0 for Ubuntu 16.04 LTS.
             , ww898::utf::max_unicode_code_point
             , std::little_endian
@@ -922,17 +902,10 @@ BOOST_AUTO_TEST_CASE(example, WW898_PERFORMANCE_TESTS_MODE)
     auto u32r = conv<char32_t>(std::string_view(u8r.data(), u8r.size())); // C++17 only
 #endif
 
-    static_assert(is_utf_same<decltype(*u8s), decltype(u8)::value_type>::value, "Fail");
+    static_assert(std::is_same<utf_selector<decltype(*u8s)>, utf_selector<decltype(u8)::value_type>>::value, "Fail");
     static_assert(
-        is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value !=
-        is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value, "Fail");
-
-#if __cpp_constexpr >= 201603
-    static_assert(is_utf_same_v<decltype(*u8s), decltype(u8)::value_type>, "Fail"); // C++17 only
-    static_assert(
-        is_utf_same_v<decltype(u16)::value_type, decltype(uw)::value_type> !=
-        is_utf_same_v<decltype(u32)::value_type, decltype(uw)::value_type>, "Fail"); // C++17 only
-#endif
+        std::is_same<utf_selector_t<decltype(u16)::value_type>, utf_selector_t<decltype(uw)::value_type>>::value !=
+        std::is_same<utf_selector_t<decltype(u32)::value_type>, utf_selector_t<decltype(uw)::value_type>>::value, "Fail");
 }
 
 #undef WW898_PERFORMANCE_TESTS_MODE

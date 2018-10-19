@@ -1,48 +1,63 @@
 @echo off
 
-set _MsBuild=C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\MSBuild.exe
+set _MsBuild=C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe
+set _CMake=C:\Program Files\CMake\bin\cmake.exe
 
-set _Arch=
-set _Tool=
-set _Gen0=
-set _Gen1=
-set _Conf=Release
+call :_build vc142 x86 Release
+call :_build vc142 x86 Debug
+call :_build vc142 x64 Release
+call :_build vc142 x64 Debug
 
-:_loop
-if "%1"=="" goto :_run
+call :_build vc141 x86 Release
+call :_build vc141 x86 Debug
+call :_build vc141 x64 Release
+call :_build vc141 x64 Debug
 
-if %1==vc120 set _Tool=%1&& set _Gen0=Visual Studio 12 2013&& goto :_next
-if %1==vc140 set _Tool=%1&& set _Gen0=Visual Studio 14 2015&& goto :_next
-if %1==vc141 set _Tool=%1&& set _Gen0=Visual Studio 15 2017&& goto :_next
+call :_build vc140 x86 Release
+call :_build vc140 x86 Debug
+call :_build vc140 x64 Release
+call :_build vc140 x64 Debug
 
-if %1==x86 set _Arch=%1&& set _Gen1=&& goto :_next
-if %1==x64 set _Arch=%1&& set _Gen1= Win64&& goto :_next
+call :_build vc120 x86 Release
+call :_build vc120 x86 Debug
+call :_build vc120 x64 Release
+call :_build vc120 x64 Debug
 
-if %1==Release set _Conf=%1&& goto :_next
-if %1==Debug   set _Conf=%1&& goto :_next
+echo Ok
+goto :_end
 
-echo "Invalid argument %1"
-exit /b 1
+:_build
 
-:_next
-shift
-goto :_loop
+set _Tool=%1
+set _Arch=%2
+set _Conf=%3
 
-:_run
-if "%_Tool%"=="" echo Toolset was not defined&& exit /b 1
-if "%_Arch%"=="" echo Architecture was not defined&& exit /b 1
-if "%_Conf%"=="" echo Configuration was not defined&& exit /b 1
+echo Toolset:            %_Tool%
+echo Architecture:       %_Arch%
+echo Configuration:      %_Conf%
 
 set _Dir=obj.%_Tool%.%_Arch%
-set _Gen=%_Gen0%%_Gen1%
 
-echo CMake binary directory: %_Dir%
-echo CMake generator:        %_Gen%
+echo Subdirectory:       %_Dir%
+
+if "%_Tool%"=="vc120" set _Gen=Visual Studio 12 2013
+if "%_Tool%"=="vc140" set _Gen=Visual Studio 14 2015
+if "%_Tool%"=="vc141" set _Gen=Visual Studio 15 2017
+if "%_Tool%"=="vc142" set _Gen=Visual Studio 16 2019
+if "%_Gen%"=="" echo Unknwon toolset&& exit /b 1
+
+echo CMake generator:    %_Gen%
+
+if "%_Arch%"=="x86" set _GenArch=Win32
+if "%_Arch%"=="x64" set _GenArch=x64
+if "%_GenArch%"=="" echo Unknwon architecture&& exit /b 1
+
+echo CMake architecture: %_GenArch%
 
 if not exist "%_Dir%" mkdir "%_Dir%"
 
 pushd "%_Dir%"
-cmake -G "%_Gen%" ..
+"%_CMake%" -G "%_Gen%" -A %_GenArch% ..
 popd
 if errorlevel 1 exit /b 1
 
@@ -51,4 +66,4 @@ pushd "%_Dir%"
 if errorlevel 1 exit /b 1
 popd
 
-echo Ok
+:_end
