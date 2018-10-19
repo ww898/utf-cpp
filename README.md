@@ -29,16 +29,20 @@ Tested on following compilers:
 
 ```cpp
 // यूनिकोड
-static char const u8_orig[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
-using namespace ww898;
+static char const u8s[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
+using namespace ww898::utf;
 std::u16string u16;
-utf::convz<utf::utf8, utf::utf16>(u8_orig, std::back_inserter(u16));
+convz<utf_selector_t<decltype(*u8s)>, utf16>(u8s, std::back_inserter(u16));
 std::u32string u32;
-utf::conv<utf::utf16, utf::utf32>(u16.begin(), u16.end(), std::back_inserter(u32));
+conv<utf16, utf_selector_t<decltype(u32)::value_type>>(u16.begin(), u16.end(), std::back_inserter(u32));
 std::vector<char> u8;
-utf::convz<utf::utf32, utf::utf8>(u32.begin(), std::back_inserter(u8));
-std::wstring wstr;
-utf::convz<utf::utf8, utf::utfw>(u8.begin(), std::back_inserter(wstr));
+convz<utf32, utf8>(u32.data(), std::back_inserter(u8));
+std::wstring uw;
+conv<utf8, utfw>(u8s, u8s + sizeof(u8s), std::back_inserter(uw));
+static_assert(is_utf_same<decltype(*u8s), decltype(u8)::value_type>::value, "Fail");
+static_assert(1 ==
+    (is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value ? 1 : 0) +
+    (is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value ? 1 : 0), "Fail");
 ```
 
 ## Performance

@@ -456,8 +456,9 @@ template<
     typename Utf,
     typename Outf,
     typename It,
+    typename Eit,
     typename Oit>
-Oit conv(It && it, It && eit, Oit && oit)
+Oit conv(It && it, Eit && eit, Oit && oit)
 {
     return detail::conv_strategy<Utf, Outf,
             typename std::decay<It>::type,
@@ -468,7 +469,7 @@ Oit conv(It && it, It && eit, Oit && oit)
                     ? detail::conv_impl::random_interator
                     : detail::conv_impl::normal>()(
         std::forward<It>(it),
-        std::forward<It>(eit),
+        std::forward<Eit>(eit),
         std::forward<Oit>(oit));
 }
 
@@ -478,11 +479,39 @@ template<
     size_t wchar_size>
 struct wchar_selector {};
 
-template<> struct wchar_selector<2> { typedef utf16 utfw_type; };
-template<> struct wchar_selector<4> { typedef utf32 utfw_type; };
+template<> struct wchar_selector<2> { typedef utf16 type; };
+template<> struct wchar_selector<4> { typedef utf32 type; };
 
 }
 
-typedef detail::wchar_selector<sizeof(wchar_t)>::utfw_type utfw;
+typedef detail::wchar_selector<sizeof(wchar_t)>::type utfw;
+
+namespace detail {
+
+template<
+    typename Ch>
+struct utf_selector {};
+
+template<> struct utf_selector<         char> { typedef utf8  type; };
+template<> struct utf_selector<unsigned char> { typedef utf8  type; };
+template<> struct utf_selector<signed   char> { typedef utf8  type; };
+template<> struct utf_selector<char16_t     > { typedef utf16 type; };
+template<> struct utf_selector<char32_t     > { typedef utf32 type; };
+template<> struct utf_selector<wchar_t      > { typedef utfw  type; };
+
+}
+
+template<
+    typename Ch>
+using utf_selector = detail::utf_selector<typename std::decay<Ch>::type>;
+
+template<
+    typename Ch>
+using utf_selector_t = typename utf_selector<Ch>::type;
+
+template<
+    typename Ch1,
+    typename Ch2>
+using is_utf_same = std::is_same<utf_selector_t<Ch1>, utf_selector_t<Ch2>>;
 
 }}

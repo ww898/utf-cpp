@@ -42,7 +42,6 @@
 #include <iostream>
 #include <iomanip>
 #include <codecvt>
-#include <forward_list>
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <chrono>
@@ -63,16 +62,16 @@ namespace {
 
 struct unicode_tuple final
 {
-    std::string utf8;
-    std::u16string utf16;
-    std::u32string utf32;
-    std::wstring utfw;
+    std::string    u8 ;
+    std::u16string u16;
+    std::u32string u32;
+    std::wstring   uw ;
 };
 
 struct supported_tuple final
 {
-    std::string utf8;
-    std::u32string utf32;
+    std::string    u8 ;
+    std::u32string u32;
 };
 
 unicode_tuple const unicode_test_data[] =
@@ -384,17 +383,17 @@ supported_tuple const supported_test_data[] =
 
 template<
     typename Ch>
-struct utf_resolver {};
+struct utf_namer {};
 
-template<> struct utf_resolver<char    > { typedef utf::utf8  utf_type; static char const name[]; };
-template<> struct utf_resolver<char16_t> { typedef utf::utf16 utf_type; static char const name[]; };
-template<> struct utf_resolver<char32_t> { typedef utf::utf32 utf_type; static char const name[]; };
-template<> struct utf_resolver<wchar_t > { typedef utf::utfw  utf_type; static char const name[]; };
+template<> struct utf_namer<char    > { static char const value[]; };
+template<> struct utf_namer<char16_t> { static char const value[]; };
+template<> struct utf_namer<char32_t> { static char const value[]; };
+template<> struct utf_namer<wchar_t > { static char const value[]; };
 
-char const utf_resolver<char    >::name[] = "UTF8";
-char const utf_resolver<char16_t>::name[] = "UTF16";
-char const utf_resolver<char32_t>::name[] = "UTF32";
-char const utf_resolver<wchar_t >::name[] = "UTFW";
+char const utf_namer<char    >::value[] = "UTF8";
+char const utf_namer<char16_t>::value[] = "UTF16";
+char const utf_namer<char32_t>::value[] = "UTF32";
+char const utf_namer<wchar_t >::value[] = "UTFW";
 
 template<
     typename Ch,
@@ -403,8 +402,8 @@ void run_conv_test(
     std::basic_string<Ch> const & buf,
     std::basic_string<Och> const & obuf)
 {
-    typedef typename utf_resolver<Ch>::utf_type utf_type;
-    typedef typename utf_resolver<Och>::utf_type outf_type;
+    typedef utf::utf_selector_t<Ch> utf_type;
+    typedef utf::utf_selector_t<Och> outf_type;
 
     std::basic_string<Och> buf_tmp0;
     utf::convz<utf_type, outf_type>(buf.data(), std::back_inserter(buf_tmp0));
@@ -421,7 +420,7 @@ template<
 void run_size_test(
     std::basic_string<Ch> const & buf)
 {
-    typedef typename utf_resolver<Ch>::utf_type utf_type;
+    typedef utf::utf_selector_t<Ch> utf_type;
 
     size_t total_size0 = 0;
     for (auto str = buf.data(); *str;)
@@ -442,33 +441,80 @@ void run_size_test(
 
 }
 
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf8  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf8 , tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf16 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf8 , tuple.utf16); }
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf32 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf8 , tuple.utf32); }
-BOOST_DATA_TEST_CASE(conv_utf8_to_utfw  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf8 , tuple.utfw ); }
-BOOST_DATA_TEST_CASE(conv_utf16_to_utf8 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf16, tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(conv_utf16_to_utf16, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf16, tuple.utf16); }
-BOOST_DATA_TEST_CASE(conv_utf16_to_utf32, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf16, tuple.utf32); }
-BOOST_DATA_TEST_CASE(conv_utf16_to_utfw , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf16, tuple.utfw ); }
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf8 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf32, tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf16, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf32, tuple.utf16); }
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf32, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf32, tuple.utf32); }
-BOOST_DATA_TEST_CASE(conv_utf32_to_utfw , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utf32, tuple.utfw ); }
-BOOST_DATA_TEST_CASE(conv_utfw_to_utf8  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utfw , tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(conv_utfw_to_utf16 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utfw , tuple.utf16); }
-BOOST_DATA_TEST_CASE(conv_utfw_to_utf32 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utfw , tuple.utf32); }
-BOOST_DATA_TEST_CASE(conv_utfw_to_utfw  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.utfw , tuple.utfw ); }
+BOOST_DATA_TEST_CASE(conv_u8_to_u8  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u8 , tuple.u8 ); }
+BOOST_DATA_TEST_CASE(conv_u8_to_u16 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u8 , tuple.u16); }
+BOOST_DATA_TEST_CASE(conv_u8_to_u32 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u8 , tuple.u32); }
+BOOST_DATA_TEST_CASE(conv_u8_to_uw  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u8 , tuple.uw ); }
+BOOST_DATA_TEST_CASE(conv_u16_to_u8 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u16, tuple.u8 ); }
+BOOST_DATA_TEST_CASE(conv_u16_to_u16, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u16, tuple.u16); }
+BOOST_DATA_TEST_CASE(conv_u16_to_u32, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u16, tuple.u32); }
+BOOST_DATA_TEST_CASE(conv_u16_to_uw , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u16, tuple.uw ); }
+BOOST_DATA_TEST_CASE(conv_u32_to_u8 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u32, tuple.u8 ); }
+BOOST_DATA_TEST_CASE(conv_u32_to_u16, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u32, tuple.u16); }
+BOOST_DATA_TEST_CASE(conv_u32_to_u32, boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u32, tuple.u32); }
+BOOST_DATA_TEST_CASE(conv_u32_to_uw , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.u32, tuple.uw ); }
+BOOST_DATA_TEST_CASE(conv_uw_to_u8  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.uw , tuple.u8 ); }
+BOOST_DATA_TEST_CASE(conv_uw_to_u16 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.uw , tuple.u16); }
+BOOST_DATA_TEST_CASE(conv_uw_to_u32 , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.uw , tuple.u32); }
+BOOST_DATA_TEST_CASE(conv_uw_to_uw  , boost::make_iterator_range(unicode_test_data), tuple) { run_conv_test(tuple.uw , tuple.uw ); }
 
-BOOST_DATA_TEST_CASE(conv_utf32_to_utf8_supported, boost::make_iterator_range(supported_test_data), tuple) { run_conv_test(tuple.utf32, tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(conv_utf8_to_utf32_supported, boost::make_iterator_range(supported_test_data), tuple) { run_conv_test(tuple.utf8 , tuple.utf32); }
+BOOST_DATA_TEST_CASE(conv_u32_to_u8_supported, boost::make_iterator_range(supported_test_data), tuple) { run_conv_test(tuple.u32, tuple.u8 ); }
+BOOST_DATA_TEST_CASE(conv_u8_to_u32_supported, boost::make_iterator_range(supported_test_data), tuple) { run_conv_test(tuple.u8 , tuple.u32); }
 
-BOOST_DATA_TEST_CASE(size_utf8 , boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(size_utf16, boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.utf16); }
-BOOST_DATA_TEST_CASE(size_utf32, boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.utf32); }
-BOOST_DATA_TEST_CASE(size_utfw , boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.utfw ); }
+BOOST_DATA_TEST_CASE(size_u8 , boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.u8 ); }
+BOOST_DATA_TEST_CASE(size_u16, boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.u16); }
+BOOST_DATA_TEST_CASE(size_u32, boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.u32); }
+BOOST_DATA_TEST_CASE(size_uw , boost::make_iterator_range(unicode_test_data), tuple) { run_size_test(tuple.uw ); }
 
-BOOST_DATA_TEST_CASE(size_utf8_supported , boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.utf8 ); }
-BOOST_DATA_TEST_CASE(size_utf32_supported, boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.utf32); }
+BOOST_DATA_TEST_CASE(size_u8_supported , boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.u8 ); }
+BOOST_DATA_TEST_CASE(size_u32_supported, boost::make_iterator_range(supported_test_data), tuple) { run_size_test(tuple.u32); }
+
+BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char,          char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char, unsigned char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<unsigned char, signed   char>::value);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same<signed char,          char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<signed char, unsigned char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<signed char, signed   char>::value);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same<char,          char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<char, unsigned char>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<char, signed   char>::value);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same<char16_t, char16_t>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<char32_t, char32_t>::value);
+BOOST_STATIC_ASSERT(utf::is_utf_same<wchar_t , wchar_t >::value);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char, char16_t>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char, char32_t>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char, wchar_t >::value);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, char>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, char>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t , char>::value);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, char32_t>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, char16_t>::value);
+
+#if defined(_WIN32)
+
+BOOST_STATIC_ASSERT( utf::is_utf_same<char16_t, wchar_t>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char32_t, wchar_t>::value);
+
+BOOST_STATIC_ASSERT( utf::is_utf_same<wchar_t, char16_t>::value);
+BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t, char32_t>::value);
+
+#elif defined(__linux__) || defined(__APPLE__)
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same<char16_t, wchar_t>::value);
+BOOST_STATIC_ASSERT( utf::is_utf_same<char32_t, wchar_t>::value);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same<wchar_t, char16_t>::value);
+BOOST_STATIC_ASSERT( utf::is_utf_same<wchar_t, char32_t>::value);
+
+#else
+    #error Unknown platform
+#endif
 
 namespace {
 
@@ -507,7 +553,7 @@ uint64_t get_time() throw()
 #endif
 
 #else
-    #error get_time() is not implmeneted
+    #error Unknown compiler
 #endif
 }
 
@@ -561,7 +607,7 @@ uint64_t get_time_resolution() throw()
     auto const elapsed_time = end_time - beg_time;
     return static_cast<uint64_t>(elapsed_time * 1000000000ull / elapsed_orig.count());
 #else
-    #error get_time_resolution() is not implmeneted
+    #error Unknown platform
 #endif
 }
 
@@ -593,8 +639,8 @@ void dump_name()
 {
     static size_t const name_width = 5;
     std::cout <<
-        std::left << std::setw(name_width) << utf_resolver<Ch>::name  << " ==> " <<
-        std::left << std::setw(name_width) << utf_resolver<Och>::name << ": ";
+        std::left << std::setw(name_width) << utf_namer<Ch>::value  << " ==> " <<
+        std::left << std::setw(name_width) << utf_namer<Och>::value << ": ";
 }
 
 void dump_duration(double const duration)
@@ -622,8 +668,8 @@ double run_measure(
     std::vector<Ch> const & buf,
     std::vector<Och> const & obuf)
 {
-    typedef typename utf_resolver<Ch>::utf_type utf_type;
-    typedef typename utf_resolver<Och>::utf_type outf_type;
+    typedef utf::utf_selector_t<Ch> utf_type;
+    typedef utf::utf_selector_t<Och> outf_type;
 
     std::vector<Och> res;
     res.reserve(obuf.capacity());
@@ -682,7 +728,7 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
 
     std::cout <<
         "sizeof wchar_t: " << sizeof(wchar_t) << std::endl <<
-        utf_resolver<wchar_t >::name << ": UTF" << 8 * sizeof(wchar_t) << std::endl;
+        utf_namer<wchar_t >::value << ": UTF" << 8 * sizeof(wchar_t) << std::endl;
 
     auto const resolution = get_time_resolution();
     std::cout << "Resolution: " << resolution << std::endl;
@@ -792,6 +838,25 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
             dump_endl();
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(example, WW898_PERFORMANCE_TESTS_MODE)
+{
+    // यूनिकोड
+    static char const u8s[] = "\xE0\xA4\xAF\xE0\xA5\x82\xE0\xA4\xA8\xE0\xA4\xBF\xE0\xA4\x95\xE0\xA5\x8B\xE0\xA4\xA1";
+    using namespace ww898::utf;
+    std::u16string u16;
+    convz<utf_selector_t<decltype(*u8s)>, utf16>(u8s, std::back_inserter(u16));
+    std::u32string u32;
+    conv<utf16, utf_selector_t<decltype(u32)::value_type>>(u16.begin(), u16.end(), std::back_inserter(u32));
+    std::vector<char> u8;
+    convz<utf32, utf8>(u32.data(), std::back_inserter(u8));
+    std::wstring uw;
+    conv<utf8, utfw>(u8s, u8s + sizeof(u8s), std::back_inserter(uw));
+    static_assert(is_utf_same<decltype(*u8s), decltype(u8)::value_type>::value, "Fail");
+    static_assert(1 ==
+        (is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value ? 1 : 0) +
+        (is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value ? 1 : 0), "Fail");
 }
 
 #undef WW898_PERFORMANCE_TESTS_MODE
