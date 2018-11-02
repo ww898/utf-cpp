@@ -24,9 +24,30 @@
 
 #pragma once
 
+#if !defined(__cpp_lib_string_view)
+#if defined(_MSVC_LANG)
+#define __cpp_lib_string_view _MSVC_LANG
+#else
+#define __cpp_lib_string_view __cplusplus
+#endif
+#endif
+
+#if !defined(__cpp_constexpr)
+#if defined(_MSVC_LANG)
+#define __cpp_constexpr _MSVC_LANG
+#else
+#define __cpp_constexpr __cplusplus
+#endif
+#endif
+
 #include <cstdint>
 #include <stdexcept>
 #include <iterator>
+#include <string>
+
+#if __cpp_lib_string_view >= 201606
+#include <string_view>
+#endif
 
 namespace ww898 {
 namespace utf {
@@ -287,6 +308,55 @@ struct utf32 final
     }
 };
 
+namespace detail {
+
+template<
+    size_t wchar_size>
+struct wchar_selector {};
+
+template<> struct wchar_selector<2> { typedef utf16 type; };
+template<> struct wchar_selector<4> { typedef utf32 type; };
+
+}
+
+typedef detail::wchar_selector<sizeof(wchar_t)>::type utfw;
+
+namespace detail {
+
+template<
+    typename Ch>
+struct utf_selector {};
+
+template<> struct utf_selector<         char> { typedef utf8  type; };
+template<> struct utf_selector<unsigned char> { typedef utf8  type; };
+template<> struct utf_selector<signed   char> { typedef utf8  type; };
+template<> struct utf_selector<char16_t     > { typedef utf16 type; };
+template<> struct utf_selector<char32_t     > { typedef utf32 type; };
+template<> struct utf_selector<wchar_t      > { typedef utfw  type; };
+
+}
+
+template<
+    typename Ch>
+using utf_selector = detail::utf_selector<typename std::decay<Ch>::type>;
+
+template<
+    typename Ch>
+using utf_selector_t = typename utf_selector<Ch>::type;
+
+template<
+    typename Ch1,
+    typename Ch2>
+using is_utf_same = std::is_same<utf_selector_t<Ch1>, utf_selector_t<Ch2>>;
+
+#if __cpp_constexpr >= 201603
+template<
+    typename Ch1,
+    typename Ch2>
+inline constexpr bool is_utf_same_v = is_utf_same<Ch1, Ch2>::value;
+#endif
+
+
 template<
     typename Utf,
     typename It>
@@ -473,45 +543,53 @@ Oit conv(It && it, Eit && eit, Oit && oit)
         std::forward<Oit>(oit));
 }
 
-namespace detail {
-
 template<
-    size_t wchar_size>
-struct wchar_selector {};
-
-template<> struct wchar_selector<2> { typedef utf16 type; };
-template<> struct wchar_selector<4> { typedef utf32 type; };
-
-}
-
-typedef detail::wchar_selector<sizeof(wchar_t)>::type utfw;
-
-namespace detail {
-
-template<
-    typename Ch>
-struct utf_selector {};
-
-template<> struct utf_selector<         char> { typedef utf8  type; };
-template<> struct utf_selector<unsigned char> { typedef utf8  type; };
-template<> struct utf_selector<signed   char> { typedef utf8  type; };
-template<> struct utf_selector<char16_t     > { typedef utf16 type; };
-template<> struct utf_selector<char32_t     > { typedef utf32 type; };
-template<> struct utf_selector<wchar_t      > { typedef utfw  type; };
-
+    typename Outf,
+    typename Ch,
+    typename Oit>
+Oit convz(Ch const * const str, Oit && oit)
+{
+    return convz<utf_selector_t<Ch>, Outf>(str, std::forward<Oit>(oit));
 }
 
 template<
-    typename Ch>
-using utf_selector = detail::utf_selector<typename std::decay<Ch>::type>;
+    typename Och,
+    typename Str>
+std::basic_string<Och> convz(Str && str)
+{
+    std::basic_string<Och> res;
+    convz<utf_selector_t<Och>>(std::forward<Str>(str), std::back_inserter(res));
+    return res;
+}
 
 template<
-    typename Ch>
-using utf_selector_t = typename utf_selector<Ch>::type;
+    typename Outf,
+    typename Ch,
+    typename Oit>
+Oit conv(std::basic_string<Ch> const & str, Oit && oit)
+{
+    return conv<utf_selector_t<Ch>, Outf>(str.cbegin(), str.cend(), std::forward<Oit>(oit));
+}
+
+#if __cpp_lib_string_view >= 201606
+template<
+    typename Outf,
+    typename Ch,
+    typename Oit>
+Oit conv(std::basic_string_view<Ch> const & str, Oit && oit)
+{
+    return conv<utf_selector_t<Ch>, Outf>(str.cbegin(), str.cend(), std::forward<Oit>(oit));
+}
+#endif
 
 template<
-    typename Ch1,
-    typename Ch2>
-using is_utf_same = std::is_same<utf_selector_t<Ch1>, utf_selector_t<Ch2>>;
+    typename Och,
+    typename Str>
+std::basic_string<Och> conv(Str && str)
+{
+    std::basic_string<Och> res;
+    conv<utf_selector_t<Och>>(std::forward<Str>(str), std::back_inserter(res));
+    return res;
+}
 
 }}

@@ -34,6 +34,16 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 		"$<$<CONFIG:Release>:/Ot>"
 		"$<$<CONFIG:Release>:/Oi>"
 		"$<$<CONFIG:Release>:/Oy->")
+
+	if(MSVC_VERSION MATCHES "^191[0-9]$")
+		target_compile_options(utf-cpp-test PRIVATE /std:c++17)
+	elseif(MSVC_VERSION STREQUAL 1900)
+		target_compile_options(utf-cpp-test PRIVATE /std:c++14)
+	elseif(MSVC_VERSION STREQUAL 1800)
+	else()
+		message(FATAL_ERROR "Unknown Microsoft Visual C++ compiler version ${MSVC_VERSION}")
+	endif()
+
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(utf-cpp-test PRIVATE -std=c++11 -Wall -Wextra)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

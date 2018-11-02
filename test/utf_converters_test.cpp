@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+#if defined(_WIN32)
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#endif
+
 #include <ww898/utf_converters.hpp>
 
 #if defined(_WIN32)
@@ -46,7 +50,7 @@
 #if defined(__linux__) || defined(__APPLE__)
 #include <chrono>
 
-#ifdef __MACH__
+#if defined(__MACH__)
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
@@ -385,10 +389,12 @@ template<
     typename Ch>
 struct utf_namer {};
 
-template<> struct utf_namer<char    > { static char const value[]; };
-template<> struct utf_namer<char16_t> { static char const value[]; };
-template<> struct utf_namer<char32_t> { static char const value[]; };
-template<> struct utf_namer<wchar_t > { static char const value[]; };
+template<> struct utf_namer<         char> { static char const value[]; };
+template<> struct utf_namer<unsigned char> : utf_namer<char> {};
+template<> struct utf_namer<signed   char> : utf_namer<char> {};
+template<> struct utf_namer<char16_t     > { static char const value[]; };
+template<> struct utf_namer<char32_t     > { static char const value[]; };
+template<> struct utf_namer<wchar_t      > { static char const value[]; };
 
 char const utf_namer<char    >::value[] = "UTF8";
 char const utf_namer<char16_t>::value[] = "UTF16";
@@ -516,6 +522,57 @@ BOOST_STATIC_ASSERT( utf::is_utf_same<wchar_t, char32_t>::value);
     #error Unknown platform
 #endif
 
+#if __cpp_constexpr >= 201603
+
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char,          char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char, unsigned char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<unsigned char, signed   char>);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char,          char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char, unsigned char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<signed char, signed   char>);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<char,          char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<char, unsigned char>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<char, signed   char>);
+
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<char16_t, char16_t>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<char32_t, char32_t>);
+BOOST_STATIC_ASSERT(utf::is_utf_same_v<wchar_t , wchar_t >);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, char16_t>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, char32_t>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char, wchar_t >);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, char>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, char>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t , char>);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, char32_t>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, char16_t>);
+
+#if defined(_WIN32)
+
+BOOST_STATIC_ASSERT( utf::is_utf_same_v<char16_t, wchar_t>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char32_t, wchar_t>);
+
+BOOST_STATIC_ASSERT( utf::is_utf_same_v<wchar_t, char16_t>);
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t, char32_t>);
+
+#elif defined(__linux__) || defined(__APPLE__)
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<char16_t, wchar_t>);
+BOOST_STATIC_ASSERT( utf::is_utf_same_v<char32_t, wchar_t>);
+
+BOOST_STATIC_ASSERT(!utf::is_utf_same_v<wchar_t, char16_t>);
+BOOST_STATIC_ASSERT( utf::is_utf_same_v<wchar_t, char32_t>);
+
+#else
+    #error Unknown platform
+#endif
+
+#endif
+
 namespace {
 
 uint64_t get_time() throw()
@@ -560,7 +617,7 @@ uint64_t get_time() throw()
 #if defined(__linux__) || defined(__APPLE__)
 void current_utc_time(timespec * ts)
 {
-#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+#if defined(__MACH__) // OS X does not have clock_gettime, use clock_get_time
     clock_serv_t cclock;
     mach_timespec_t mts;
     if (host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock) != KERN_SUCCESS)
@@ -727,6 +784,8 @@ BOOST_AUTO_TEST_CASE(performance, WW898_PERFORMANCE_TESTS_MODE)
     }
 
     std::cout <<
+        "__cpp_lib_string_view: " << std::dec << __cpp_lib_string_view << std::endl <<
+        "__cpp_constexpr      : " << std::dec << __cpp_constexpr << std::endl <<
         "sizeof wchar_t: " << sizeof(wchar_t) << std::endl <<
         utf_namer<wchar_t >::value << ": UTF" << 8 * sizeof(wchar_t) << std::endl;
 
@@ -853,10 +912,24 @@ BOOST_AUTO_TEST_CASE(example, WW898_PERFORMANCE_TESTS_MODE)
     convz<utf32, utf8>(u32.data(), std::back_inserter(u8));
     std::wstring uw;
     conv<utf8, utfw>(u8s, u8s + sizeof(u8s), std::back_inserter(uw));
+    auto u8r = conv<char>(uw);
+    auto uwr = convz<wchar_t>(u8s);
+
+#if __cpp_lib_string_view >= 201606
+    auto u32r = conv<char32_t>(std::string_view(u8r.data(), u8r.size())); // C++17 only
+#endif
+
     static_assert(is_utf_same<decltype(*u8s), decltype(u8)::value_type>::value, "Fail");
-    static_assert(1 ==
-        (is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value ? 1 : 0) +
-        (is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value ? 1 : 0), "Fail");
+    static_assert(
+        is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value !=
+        is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value, "Fail");
+
+#if __cpp_constexpr >= 201603
+    static_assert(is_utf_same_v<decltype(*u8s), decltype(u8)::value_type>, "Fail"); // C++17 only
+    static_assert(
+        is_utf_same_v<decltype(u16)::value_type, decltype(uw)::value_type> !=
+        is_utf_same_v<decltype(u32)::value_type, decltype(uw)::value_type>, "Fail"); // C++17 only
+#endif
 }
 
 #undef WW898_PERFORMANCE_TESTS_MODE

@@ -39,10 +39,13 @@ std::vector<char> u8;
 convz<utf32, utf8>(u32.data(), std::back_inserter(u8));
 std::wstring uw;
 conv<utf8, utfw>(u8s, u8s + sizeof(u8s), std::back_inserter(uw));
-static_assert(is_utf_same<decltype(*u8s), decltype(u8)::value_type>::value, "Fail");
-static_assert(1 ==
-    (is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value ? 1 : 0) +
-    (is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value ? 1 : 0), "Fail");
+auto u8r = conv<char>(uw);
+auto uwr = convz<wchar_t>(u8s);
+auto u32r = conv<char32_t>(std::string_view(u8r.data(), u8r.size())); // C++17 only
+static_assert(is_utf_same_v<decltype(*u8s), decltype(u8)::value_type>, "Fail"); // C++17 only
+static_assert(
+    is_utf_same<decltype(u16)::value_type, decltype(uw)::value_type>::value !=
+    is_utf_same<decltype(u32)::value_type, decltype(uw)::value_type>::value, "Fail");
 ```
 
 ## Performance
