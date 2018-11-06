@@ -584,12 +584,20 @@ Oit conv(std::basic_string_view<Ch> const & str, Oit && oit)
 
 template<
     typename Och,
-    typename Str>
+    typename Str,
+    typename std::enable_if<!std::is_same<typename std::decay<Str>::type, std::basic_string<Och>>::value, void *>::type = nullptr>
 std::basic_string<Och> conv(Str && str)
 {
     std::basic_string<Och> res;
     conv<utf_selector_t<Och>>(std::forward<Str>(str), std::back_inserter(res));
     return res;
+}
+
+template<
+    typename Ch>
+std::basic_string<Ch> conv(std::basic_string<Ch> str) noexcept
+{
+    return str;
 }
 
 }}

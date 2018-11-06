@@ -23,7 +23,9 @@
  */
 
 #if defined(_WIN32)
+#if !defined(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#endif
 #endif
 
 #include <ww898/utf_converters.hpp>
@@ -913,6 +915,7 @@ BOOST_AUTO_TEST_CASE(example, WW898_PERFORMANCE_TESTS_MODE)
     std::wstring uw;
     conv<utf8, utfw>(u8s, u8s + sizeof(u8s), std::back_inserter(uw));
     auto u8r = conv<char>(uw);
+    auto u16r = conv<char16_t>(u16);
     auto uwr = convz<wchar_t>(u8s);
 
 #if __cpp_lib_string_view >= 201606
