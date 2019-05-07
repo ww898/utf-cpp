@@ -32,4 +32,4 @@ UTF8  ==> UTFW : 0.340444965s (+151.96%)
 
 *** No errors detected
 ```
-*Attention:* the strange results for UTF16 to UTF8 and UTFW to UTF8 convertions. I suppose that there is no input data checking in codecvt library.
+**Attention:** the strange results for UTF16 to UTF8 and UTFW to UTF8 convertions. I suppose that there is no input data checking in codecvt library.

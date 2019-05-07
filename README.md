@@ -3,7 +3,7 @@ This is the C++11 template based header only library under Windows/Linux/MacOs t
 
 UTF-8 and UTF-32 (UCS-32) both support 31 bit wide code points `[0‥0x7FFFFFFF]`with no restriction. UTF-16 supports only unicode code points `[0‥0x10FFFF]`, where high `[0xD800‥0xDBFF]` and low `[0xDC00‥0xDFFF]` surrogate regions are prohibited.
 
-The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be in the surrogate region). UFT-32 (UCS-32) is always 1 word (4 bytes). UTF-8 has the maximum symbol size (see [conversion table](#conversion-table)):
+The maximum UTF-16 symbol size is 2 words (4 bytes, both words should be in the surrogate region). UFT-32 (UCS-32) is always 1 word (4 bytes). UTF-8 has the maximum symbol size (see [conversion table](#utf-8-conversion-table) for details):
 - 4 bytes for unicode code points
 - 6 bytes for 31bit code points
 
@@ -54,5 +54,5 @@ Tested on following compilers:
         std::is_same<utf_selector_t<decltype(u32)::value_type>, utf_selector_t<decltype(uw)::value_type>>::value, "Fail");
 ```
 
-## Conversion table
+## UTF-8 Conversion table
 ![UTF-8/32 table](https://upload.wikimedia.org/wikipedia/commons/3/38/UTF-8_Encoding_Scheme.png)
