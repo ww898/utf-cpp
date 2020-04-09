@@ -565,6 +565,12 @@ uint64_t get_time() throw()
 #endif
         );
     return static_cast<uint64_t>(hi) << 32 | lo;
+#elif defined(__aarch64__)
+    uint64_t cntvct_el0;
+    asm volatile(
+        "mrs %0, cntvct_el0\n\t"
+        : "=r" (cntvct_el0) : : );
+    return cntvct_el0;
 #else
 #error Unsupported architecture
 #endif
