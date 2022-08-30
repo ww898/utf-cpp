@@ -52,6 +52,8 @@
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <chrono>
+#include <time.h>
+#include <unistd.h>
 
 #if defined(__MACH__)
 #include <mach/clock.h>
@@ -571,6 +573,11 @@ uint64_t get_time() throw()
         "mrs %0, cntvct_el0\n\t"
         : "=r" (cntvct_el0) : : );
     return cntvct_el0;
+#elif defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
+    struct timespec tp;
+    if (clock_gettime(CLOCK_MONOTONIC, &tp) != 0)
+        std::abort();
+    return static_cast<uint64_t>(tp.tv_sec) * 1000000000ull + tp.tv_nsec;
 #else
 #error Unsupported architecture
 #endif
