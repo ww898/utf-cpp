@@ -546,6 +546,8 @@ uint64_t get_time() throw()
     int cpu_info[4];
     __cpuid(cpu_info, 0);
     return __rdtsc();
+#elif defined(_M_ARM64)
+    return _ReadStatusReg(ARM64_CNTVCT);
 #else
 #error Unsupported architecture
 #endif
