@@ -670,7 +670,7 @@ template<
 void dump_name()
 {
     static size_t const name_width = 5;
-    std::cout <<
+    std::cout << std::setfill(' ') <<
         std::left << std::setw(name_width) << utf_namer<Ch>::value  << " ==> " <<
         std::left << std::setw(name_width) << utf_namer<Och>::value << ": ";
 }
