@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <ww898/utf_config.hpp>
 
 namespace ww898 {
 namespace utf {
@@ -68,14 +69,15 @@ struct utf16 final
     }
 
     template<typename ReadFn>
-    static uint32_t read(ReadFn && read_fn)
+    FORCE_INLINE static uint32_t read(ReadFn && read_fn)
     {
-        char_type const ch0 = read_fn();
+        char_type const ch0 = read_fn.read1();
         if (ch0 < 0xD800) // [0x0000‥0xD7FF]
             return ch0;
         if (ch0 < 0xDC00) // [0xD800‥0xDBFF] [0xDC00‥0xDFFF]
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 10 != 0x37) throw std::runtime_error("The low utf16 surrogate char is expected");
+            char_type const ch1 = read_fn.read1(); 
+            if (ch1 >> 10 != 0x37) throw std::runtime_error("The low utf16 surrogate char is expected");
             return static_cast<uint32_t>((ch0 << 10) + ch1 - 0x35FDC00);
         }
         if (ch0 < 0xE000)
@@ -85,21 +87,22 @@ struct utf16 final
     }
 
     template<typename WriteFn>
-    static void write(uint32_t const cp, WriteFn && write_fn)
+    FORCE_INLINE static void write(uint32_t const cp, WriteFn && write_fn)
     {
         if (cp < 0xD800) // [0x0000‥0xD7FF]
-            write_fn(static_cast<char_type>(cp));
+            write_fn.write1(static_cast<char_type>(cp));
         else if (cp < 0x10000)
         {
             if (cp < 0xE000)
                 throw std::runtime_error("The utf16 code point can not be in surrogate range");
             // [0xE000‥0xFFFF]
-            write_fn(static_cast<char_type>(cp));
+            write_fn.write1(static_cast<char_type>(cp));
         }
         else if (cp < 0x110000) // [0xD800‥0xDBFF] [0xDC00‥0xDFFF]
         {
-            write_fn(static_cast<char_type>(0xD7C0 + (cp >> 10        )));
-            write_fn(static_cast<char_type>(0xDC00 + (cp       & 0x3FF)));
+            auto a = static_cast<char_type>(0xD7C0 + (cp >> 10));
+            auto b = static_cast<char_type>(0xDC00 + (cp & 0x3FF));
+            write_fn.write2(a, b);
         }
         else
             throw std::runtime_error("Too large the utf16 code point");

@@ -20,6 +20,7 @@ set(SOURCE_FILES
 	../include/ww898/utf_config.hpp
 	../include/ww898/utf_selector.hpp
 	../include/ww898/utf_sizes.hpp
+	../include/ww898/utf_iter.hpp
 	../include/ww898/utf_converters.hpp
 	utf_converters_test.cpp)
 
@@ -37,13 +38,15 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	target_compile_options(utf-cpp-test PRIVATE
                 /W3
 		"$<$<CONFIG:Release>:/GL>"
-		"$<$<CONFIG:Release>:/Ox>"
+		"$<$<CONFIG:Release>:/O2>"
 		"$<$<CONFIG:Release>:/Ob2>"
 		"$<$<CONFIG:Release>:/Ot>"
 		"$<$<CONFIG:Release>:/Oi>"
 		"$<$<CONFIG:Release>:/Oy->")
 
-	if(MSVC_VERSION MATCHES "^19[1-9][0-9]$")
+	if(MSVC_VERSION MATCHES "^19[3-9][0-9]$")
+		target_compile_options(utf-cpp-test PRIVATE /std:c++20)
+	elseif(MSVC_VERSION MATCHES "^19[1-2][0-9]$")
 		target_compile_options(utf-cpp-test PRIVATE /std:c++17)
 	elseif(MSVC_VERSION STREQUAL 1900)
 		target_compile_options(utf-cpp-test PRIVATE /std:c++14)

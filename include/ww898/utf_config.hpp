@@ -39,3 +39,11 @@ namespace ww898 {
 namespace utf {
 static uint32_t const max_unicode_code_point = 0x10FFFF;
 }}
+
+#if defined(_MSC_VER)
+    #pragma warning(error: 4714) // function marked as __forceinline not inlined
+    #define FORCE_INLINE __forceinline
+#else
+    #define FORCE_INLINE [[gnu::always_inline]]
+#endif
+

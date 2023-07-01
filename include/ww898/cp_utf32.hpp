@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <ww898/utf_config.hpp>
 
 namespace ww898 {
 namespace utf {
@@ -46,19 +47,19 @@ struct utf32 final
     }
 
     template<typename ReadFn>
-    static uint32_t read(ReadFn && read_fn)
+    FORCE_INLINE static uint32_t read(ReadFn && read_fn)
     {
-        char_type const ch = std::forward<ReadFn>(read_fn)();
+        char_type const ch = std::forward<ReadFn>(read_fn).read1();
         if (ch < 0x80000000)
             return ch;
         throw std::runtime_error("Too large utf32 char");
     }
 
     template<typename WriteFn>
-    static void write(uint32_t const cp, WriteFn && write_fn)
+    FORCE_INLINE static void write(uint32_t const cp, WriteFn && write_fn)
     {
         if (cp < 0x80000000)
-            std::forward<WriteFn>(write_fn)(static_cast<char_type>(cp));
+            std::forward<WriteFn>(write_fn).write1(static_cast<char_type>(cp));
         else
             throw std::runtime_error("Too large utf32 code point");
     }

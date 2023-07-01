@@ -26,6 +26,7 @@
 
 #include <ww898/utf_selector.hpp>
 #include <ww898/utf_config.hpp>
+#include <ww898/utf_iter.hpp>
 
 #include <cstdint>
 #include <iterator>
@@ -52,13 +53,14 @@ struct convz_strategy
 {
     Oit operator()(It it, Oit oit) const
     {
-        auto const read_fn = [&it] { return *it++; };
-        auto const write_fn = [&oit] (typename Outf::char_type const ch) { *oit++ = ch; };
+        // The read wrapper needs to check if it reached zero since we can't rely on read() to detect the null-term since it's reading chunks at a time
+        ReadIterZChecked<It, typename Utf::char_type> read_fn(it);
+        WriteIter<Oit, typename Outf::char_type> write_fn(oit);
         while (true)
         {
             auto const cp = Utf::read(read_fn);
             if (!cp)
-                return oit;
+                return write_fn.oit;
             Outf::write(cp, write_fn);
         }
     }
@@ -106,6 +108,7 @@ namespace detail {
 
 enum struct conv_impl { normal, random_interator, binary_copy };
 
+// normal - non random-access iterator or direct copy
 template<
     typename Utf,
     typename Outf,
@@ -116,14 +119,9 @@ struct conv_strategy final
 {
     Oit operator()(It it, It const eit, Oit oit) const
     {
-        auto const read_fn = [&it, &eit]
-            {
-                if (it == eit)
-                    throw std::runtime_error("Not enough input");
-                return *it++;
-            };
-        auto const write_fn = [&oit] (typename Outf::char_type const ch) { *oit++ = ch; };
-        while (it != eit)
+        ReadIterSeqChecked<It, typename Utf::char_type> read_fn(it, eit);
+        WriteIter<Oit, typename Outf::char_type> write_fn(oit);
+        while (read_fn.it != eit)
             Outf::write(Utf::read(read_fn), write_fn);
         return oit;
     }
@@ -138,23 +136,26 @@ struct conv_strategy<Utf, Outf, It, Oit, conv_impl::random_interator> final
 {
     Oit operator()(It it, It const eit, Oit oit) const
     {
-        auto const write_fn = [&oit] (typename Outf::char_type const ch) { *oit++ = ch; };
-        if (eit - it >= static_cast<typename std::iterator_traits<It>::difference_type>(Utf::max_supported_symbol_size))
+        WriteIter<Oit, typename Outf::char_type> write_fn{ oit };
+        ReadIterRnd<It, typename Utf::char_type> fast_read_fn(it);
+        // end iterator in terms of ReadIter's internal iterator type. Need C-style case since this cast is either no-op or a reinterpret_cast
+        auto eff_eit = (typename ReadIterRnd<It, typename Utf::char_type>::InternalIt)eit;
+        constexpr int offset_from_end = Utf::max_supported_symbol_size;
+
+        if (eff_eit - fast_read_fn.it >= static_cast<typename std::iterator_traits<It>::difference_type>(offset_from_end))
         {
-            auto const fast_read_fn = [&it] { return *it++; };
-            auto const fast_eit = eit - Utf::max_supported_symbol_size;
-            while (it < fast_eit)
-                Outf::write(Utf::read(fast_read_fn), write_fn);
+            auto fast_eit = eff_eit - offset_from_end;
+            while (fast_read_fn.it < fast_eit) {
+                auto c1 = Utf::read(fast_read_fn);
+                Outf::write(c1, write_fn);
+            }
         }
-        auto const read_fn = [&it, &eit]
-            {
-                if (it == eit)
-                    throw std::runtime_error("Not enough input");
-                return *it++;
-            };
-        while (it != eit)
-            Outf::write(Utf::read(read_fn), write_fn);
-        return oit;
+
+        ReadIterRndChecked<It, typename Utf::char_type> checked_read_it(fast_read_fn.get(), eit);
+        while (checked_read_it.it != eff_eit)
+            Outf::write(Utf::read(checked_read_it), write_fn);
+
+        return write_fn.oit;
     }
 };
 

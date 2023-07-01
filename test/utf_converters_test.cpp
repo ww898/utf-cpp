@@ -425,13 +425,21 @@ void run_conv_test(
     typedef utf::utf_selector_t<Ch> utf_type;
     typedef utf::utf_selector_t<Och> outf_type;
 
+    // read null-terminated
     std::basic_string<Och> buf_tmp0;
     utf::convz<utf_type, outf_type>(buf.data(), std::back_inserter(buf_tmp0));
+    // read random-access iterator
     std::basic_string<Och> buf_tmp1;
     utf::conv<utf_type, outf_type>(buf.cbegin(), buf.cend(), std::back_inserter(buf_tmp1));
+    std::list<Ch> in_lst(buf.cbegin(), buf.cend());
+    // read non-random-access iterator
+    std::basic_string<Och> buf_tmp2;
+    utf::conv<utf_type, outf_type>(in_lst.cbegin(), in_lst.cend(), std::back_inserter(buf_tmp2));
+
     auto const success =
         obuf == buf_tmp0 &&
-        obuf == buf_tmp1;
+        obuf == buf_tmp1 &&
+        obuf == buf_tmp2;
     BOOST_TEST_REQUIRE(success);
 }
 
@@ -704,11 +712,13 @@ double run_measure(
     typedef utf::utf_selector_t<Och> outf_type;
 
     std::vector<Och> res;
-    res.reserve(obuf.capacity());
+    res.resize(obuf.size());
+
     auto const duration = measure(resolution, [&]
         {
             res.clear();
-            utf::conv<utf_type, outf_type>(&buf.front(), &buf.back() + 1, std::back_inserter(res));
+            res.resize(obuf.size());
+            utf::conv<utf_type, outf_type>(&buf.front(), &buf.back() + 1, &res.front());
         });
     BOOST_TEST_REQUIRE(res.size() == obuf.size());
     auto const same = memcmp(&obuf.front(), &res.front(), sizeof(Och) * res.size()) == 0;
@@ -925,9 +935,109 @@ BOOST_AUTO_TEST_CASE(example, WW898_PERFORMANCE_TESTS_MODE)
 
 #undef WW898_PERFORMANCE_TESTS_MODE
 
+const std::string u8_partials[] = {
+// at the start of a string
+    // should be 2 bytes
+    "\xc2",
+    // should be 3 bytes
+    "\xE0",
+    "\xE0\xA4",
+    // should be 4 bytes
+    "\xF0"
+    "\xF0\x90"
+    "\xF0\x90\x8D"
+    // should be 5 bytes
+    "\xF8",
+    "\xF8\x90",
+    "\xF8\x90\x90",
+    "\xF8\x90\x90\x90",
+    // should be 6 bytes
+    "\xFC",
+    "\xFC\x90",
+    "\xFC\x90\x90",
+    "\xFC\x90\x90\x90",
+    "\xFC\x90\x90\x90\x90",
+    // internal byte without header
+    "\x90",
+// after a few code points
+    // should be 2 bytes
+    "012345678901234567890\xc2",
+    // should be 3 bytes
+    "012345678901234567890\xE0",
+    "012345678901234567890\xE0\xA4",
+    // should be 4 bytes
+    "012345678901234567890\xF0"
+    "012345678901234567890\xF0\x90"
+    "012345678901234567890\xF0\x90\x8D"
+    // should be 5 bytes
+    "012345678901234567890\xF8",
+    "012345678901234567890\xF8\x90",
+    "012345678901234567890\xF8\x90\x90",
+    "012345678901234567890\xF8\x90\x90\x90",
+    // should be 6 bytes
+    "012345678901234567890\xFC",
+    "012345678901234567890\xFC\x90",
+    "012345678901234567890\xFC\x90\x90",
+    "012345678901234567890\xFC\x90\x90\x90",
+    "012345678901234567890\xFC\x90\x90\x90\x90",
+    // internal byte without header
+    "012345678901234567890\x90",
+};
+
+const std::u16string u16_partials[] = {
+// at the start
+    // low
+    { 0xDC00 },
+    { 0xDFFF },
+    // high
+    { 0xD800 },
+    { 0xDBFF },
+// after a few code points
+    // low
+    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', 0xDC00 },
+    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', 0xDFFF },
+    // high
+    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', 0xD800 },
+    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', 0xDBFF },
+};
+
+
+template<typename Ch, typename Och>
+void test_partial(const std::basic_string<Ch>& instr)
+{
+    typedef utf::utf_selector_t<Ch> utf_type;
+    typedef utf::utf_selector_t<Och> outf_type;
+
+    using namespace ww898::utf;
+    std::basic_string<Och> outstr;
+
+    // as null-term string
+    BOOST_CHECK_THROW((convz<utf_type, outf_type>(instr.data(), std::back_inserter(outstr))), std::runtime_error);
+
+    std::vector<Ch> inbuf(instr.data(), instr.data() + instr.size()); // no null term
+    // as vector iterators
+    outstr.clear();
+    BOOST_CHECK_THROW((conv<utf_type, outf_type>(inbuf.cbegin(), inbuf.cend(), std::back_inserter(outstr))), std::runtime_error);
+
+    // as ranged pointers
+    outstr.clear();
+    BOOST_CHECK_THROW((conv<utf_type, outf_type>(&inbuf.front(), &inbuf.back() + 1, std::back_inserter(outstr))), std::runtime_error);
+
+    // as list
+    std::list<Ch> inlst(inbuf.cbegin(), inbuf.cend());
+    outstr.clear();
+    BOOST_CHECK_THROW((conv<utf_type, outf_type>(inlst.cbegin(), inlst.cend(), std::back_inserter(outstr))), std::runtime_error);
+}
+
+BOOST_DATA_TEST_CASE(error_u8_partial_codes, u8_partials, instr)       { test_partial<char, char16_t>(instr); }
+BOOST_DATA_TEST_CASE(error_u16_partial_surrogate, u16_partials, instr) { test_partial<char16_t, char>(instr); }
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }}
 
+
 BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::utf_converters::unicode_tuple)
 BOOST_TEST_DONT_PRINT_LOG_VALUE(ww898::test::utf_converters::supported_tuple)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(std::u16string)
