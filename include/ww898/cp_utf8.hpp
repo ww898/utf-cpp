@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <utility>
 
 namespace ww898 {
 namespace utf {

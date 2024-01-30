@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 // Normally `__cpp_lib_string_view` should be defined in string header
 #include <string>
 

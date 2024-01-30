@@ -28,6 +28,8 @@
 #include <ww898/utf_config.hpp>
 
 #include <cstddef>
+#include <stdexcept>
+#include <type_traits>
 #include <iterator>
 #include <string>
 
